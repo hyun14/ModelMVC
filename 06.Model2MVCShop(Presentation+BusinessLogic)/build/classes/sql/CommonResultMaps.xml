@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 공통 resultMap 전용 -->
+<mapper namespace="ResultMaps">
+
+  <!-- =======================
+       User 결과 매핑
+       (SELECT가 컬럼 별칭: userId, userName, ...을 반환)
+       ======================= -->
+  <resultMap id="userMap" type="user">
+    <id     property="userId"    column="userId"    jdbcType="VARCHAR"/>
+    <result property="userName"  column="userName"  jdbcType="VARCHAR"/>
+    <result property="password"  column="password"  jdbcType="VARCHAR"/>
+    <result property="role"      column="role"      jdbcType="VARCHAR"/>
+    <result property="ssn"       column="ssn"       jdbcType="VARCHAR"/>
+    <result property="cellPhone" column="cellPhone" jdbcType="VARCHAR"/>
+    <result property="addr"      column="addr"      jdbcType="VARCHAR"/>
+    <result property="email"     column="email"     jdbcType="VARCHAR"/>
+    <result property="regDate"   column="regDate"   jdbcType="DATE"/>
+  </resultMap>
+
+  <!-- =======================
+       Product 결과 매핑
+       (SELECT 별칭: prodNo, prodName, ... / 목록에 proTranCode 포함)
+       ======================= -->
+  <resultMap id="productMap" type="product">
+    <id     property="prodNo"     column="prodNo"     jdbcType="NUMERIC"/>
+    <result property="prodName"   column="prodName"   jdbcType="VARCHAR"/>
+    <result property="prodDetail" column="prodDetail" jdbcType="VARCHAR"/>
+    <result property="manuDate"   column="manuDate"   jdbcType="VARCHAR"/>
+    <result property="price"      column="price"      jdbcType="NUMERIC"/>
+    <result property="fileName"   column="fileName"   jdbcType="VARCHAR"/>
+    <result property="regDate"    column="regDate"    jdbcType="DATE"/>
+    <!-- 최신 거래상태(조인에서만 존재) -->
+    <result property="proTranCode" column="proTranCode" jdbcType="CHAR"/>
+  </resultMap>
+
+  <!-- =======================
+       Purchase 결과 매핑
+       (원본 컬럼명: tran_no, order_data 등 사용)
+       + buyer(User), purchaseProd(Product) 중첩 매핑
+       ======================= -->
+  <resultMap id="purchaseMap" type="purchase">
+    <id     property="tranNo"        column="tran_no"         jdbcType="NUMERIC"/>
+    <result property="paymentOption"  column="payment_option"  jdbcType="CHAR"/>
+    <result property="receiverName"   column="receiver_name"   jdbcType="VARCHAR"/>
+    <result property="receiverPhone"  column="receiver_phone"  jdbcType="VARCHAR"/>
+    <result property="divyAddr"       column="demailaddr"      jdbcType="VARCHAR"/>
+    <result property="divyRequest"    column="dlvy_request"    jdbcType="VARCHAR"/>
+    <result property="tranCode"       column="tran_status_code" jdbcType="CHAR"/>
+    <result property="orderDate"      column="order_data"      jdbcType="DATE"/>
+    <result property="divyDate"       column="dlvy_date"       jdbcType="DATE"/>
+
+    <association property="buyer" javaType="user">
+      <id property="userId" column="buyer_id" jdbcType="VARCHAR"/>
+    </association>
+
+    <association property="purchaseProd" javaType="product">
+      <id     property="prodNo"   column="prod_no"   jdbcType="NUMERIC"/>
+      <result property="prodName" column="prod_name" jdbcType="VARCHAR"/>
+      <result property="price"    column="price"     jdbcType="NUMERIC"/>
+    </association>
+  </resultMap>
+
+</mapper>
