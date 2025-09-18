@@ -1,0 +1,3 @@
+/* [목적] 표 행을 전체 클릭 가능하게 보이도록 포인터 및 호버 강조 적용 */
+table tr.click-row { cursor: pointer; }
+table tr.click-row:hover { background-color: #eef2ff; }
