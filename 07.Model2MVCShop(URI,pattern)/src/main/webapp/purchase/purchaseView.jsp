@@ -11,7 +11,7 @@
     <c:set var="loginUser" value="${requestScope.loginUser}" />
   </c:when>
   <c:otherwise>
-    <c:set var="loginUser" value="${sessionScope.user}" />
+    <c:set var="loginUser" value="${sessionScope.loginUser}" />
   </c:otherwise>
 </c:choose>
 

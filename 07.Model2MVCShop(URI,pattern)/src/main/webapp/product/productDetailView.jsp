@@ -8,7 +8,7 @@
 <!-- 컨트롤러에서 넣어준 requestScope.product 를 지역변수처럼 참조 -->
 <c:set var="product" value="${requestScope.product}" />
 <!-- 세션 사용자/권한 -->
-<c:set var="user" value="${sessionScope.user}" />
+<c:set var="user" value="${sessionScope.loginUser}" />
 <c:set var="isAdmin" value="${not empty user and user.role == 'admin'}" />
 <%-- [의미] 목록 복귀용 기준(menu) : param.menu > requestScope.menu > 기본값 'search' --%>
 <c:set var="menuVal" value="${not empty param.menu ? param.menu : menu}" />

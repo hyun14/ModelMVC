@@ -100,7 +100,7 @@
 			<td></td>
       
 			<c:url var="detailUrl" value="./getUser">
-              <c:param name="userId" value="${u.userId}" />
+              <c:param name="userId" value="${user.userId}" />
               <c:param name="currentPage" value="${search.currentPage}" />
               <c:param name="pageSize" value="${search.pageSize}" />
               <c:if test="${not empty search.searchCondition}">

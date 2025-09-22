@@ -38,7 +38,7 @@ public class LogonCheckInterceptor extends HandlerInterceptorAdapter {
 		
 		//==> 로그인 유무확인
 		HttpSession session = request.getSession(true);
-		User user = (User)session.getAttribute("user");
+		User user = (User)session.getAttribute("loginUser");
 
 		//==> 로그인한 회원이라면...
 		if(   user != null   )  {

@@ -7,7 +7,7 @@
 
 <!-- 컨텍스트/세션 사용자/권한 JSTL 변수로 세팅 -->
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<c:set var="vo"  value="${sessionScope.user}" />
+<c:set var="vo"  value="${sessionScope.loginUser}" />
 <c:set var="role" value="${empty vo ? '' : vo.role}" />
 
 <html>

@@ -87,7 +87,9 @@ public class UserController {
 	}
 	
 	@RequestMapping("/updateUserView")
-	public String updateUserView( @RequestParam("userId") String userId , Model model ) throws Exception{
+	public String updateUserView( @RequestParam("userId") String userId,
+			@ModelAttribute("search") Search search,
+			Model model ) throws Exception{
 
 		System.out.println("/updateUserView");
 		//Business Logic
@@ -95,22 +97,29 @@ public class UserController {
 		// Model 과 View 연결
 		model.addAttribute("user", user);
 		
+		SearchSupport.normalizeAlways(search, this.pageSize);
+	    model.addAttribute("search", search);
+		
 		return "forward:/user/updateUser.jsp";
 	}
 	
 	@RequestMapping("/updateUser")
-	public String updateUser( @ModelAttribute("user") User user , Model model , HttpSession session) throws Exception{
+	public String updateUser( @ModelAttribute("user") User user, 
+			@ModelAttribute("search") Search search,
+			Model model , HttpSession session) throws Exception{
 
 		System.out.println("/updateUser");
 		//Business Logic
 		userService.updateUser(user);
 		
-		String sessionId=((User)session.getAttribute("user")).getUserId();
+		String sessionId=((User)session.getAttribute("loginUser")).getUserId();
 		if(sessionId.equals(user.getUserId())){
-			session.setAttribute("user", user);
+			session.setAttribute("loginUser", user);
 		}
 		
-		return "redirect:/user/getUser?userId="+user.getUserId();
+		SearchSupport.normalizeAlways(search, this.pageSize);
+		
+		return "redirect:/user/getUser?userId="+user.getUserId() + SearchSupport.toQueryString(search);
 	}
 	
 	@RequestMapping(value = "/login", method = RequestMethod.GET)//
@@ -130,7 +139,7 @@ public class UserController {
 	    User dbUser = userService.loginUser(user);
 
 	    // [동일] 로그인 성공 시 세션 저장
-	    session.setAttribute("user", dbUser);
+	    session.setAttribute("loginUser", dbUser);
 
 	    return "redirect:/index.jsp";
 	}

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <html>
 <head>
@@ -50,8 +51,16 @@ function resetData() {
 
 <form name="detailForm"  method="post" >
 
-<%--<input type="hidden" name="userId" value="<%=user.getUserId() %>"> --%>
 <input type="hidden" name="userId" value="${user.userId }">
+<input type="hidden" name="currentPage"    value="${search.currentPage}" />
+<input type="hidden" name="pageSize"       value="${search.pageSize}" />
+<c:if test="${not empty search.searchCondition}">
+  <input type="hidden" name="searchCondition" value="${search.searchCondition}" />
+</c:if>
+<c:if test="${not empty search.searchKeyword}">
+  <input type="hidden" name="searchKeyword"   value="${fn:trim(search.searchKeyword)}" />
+</c:if>
+
 
 <table width="100%" height="37" border="0" cellpadding="0"	cellspacing="0">
 	<tr>

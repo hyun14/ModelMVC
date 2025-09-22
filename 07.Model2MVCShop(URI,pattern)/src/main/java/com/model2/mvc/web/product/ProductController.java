@@ -55,7 +55,7 @@ public class ProductController {
 
 		// 권한 체크(관리자만) : 기존 로직 유지
 		HttpSession session = request.getSession(false);
-		User user = (session != null) ? (User) session.getAttribute("user") : null;
+		User user = (session != null) ? (User) session.getAttribute("loginUser") : null;
 		if (user == null || "user".equals(user.getRole())) {
 			return "redirect:/error/forbidden.jsp";
 		}
@@ -108,7 +108,7 @@ public class ProductController {
 
 		// [권한 체크] : 관리자만 접근 가능 (기존 로직 유지)
 		HttpSession session = request.getSession(false);
-		User user = (session != null) ? (User) session.getAttribute("user") : null;
+		User user = (session != null) ? (User) session.getAttribute("loginUser") : null;
 		if (user == null || "user".equals(user.getRole())) {
 			return "redirect:/error/forbidden.jsp";
 		}

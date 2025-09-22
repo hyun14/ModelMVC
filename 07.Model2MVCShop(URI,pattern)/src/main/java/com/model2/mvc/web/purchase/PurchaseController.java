@@ -69,7 +69,7 @@ public class PurchaseController {
 		Product product = productService.findProduct(prodNo);
 		model.addAttribute("product", product);
 
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		model.addAttribute("loginUser", loginUser);
 
 		return "forward:/purchase/purchaseView.jsp";
@@ -91,7 +91,7 @@ public class PurchaseController {
 
 		// [세션 유저 주입] : 로그인 유저를 구매자(buyer)로 설정
 		// - 세션에 user가 있으면 Purchase.buyer에 그대로 세팅
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		if (loginUser != null) {
 			purchase.setBuyer(loginUser);
 		}
@@ -195,7 +195,7 @@ public class PurchaseController {
 		}
 
 		// 1) 소유자 확인(조회는 최소 1회만)
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		Purchase db = purchaseService.getPurchase(tranNo);
 		if (db == null) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -234,7 +234,7 @@ public class PurchaseController {
 		SearchSupport.normalizeAlways(search, this.pageSize);
 
 		// [의미] 로그인 사용자 ID 추출(구매자 기준 목록)
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		String buyerId = (loginUser != null ? loginUser.getUserId() : null);
 
 		// [의미] 서비스 호출(기존 서비스/DAO 시그니처 그대로 사용)
@@ -266,7 +266,7 @@ public class PurchaseController {
 			@RequestParam(value = "pageSize", required = false) Integer size, HttpServletResponse response, Model model)
 			throws Exception {
 
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		boolean isAdmin = (loginUser != null && loginUser.getRole() != null && !"user".equals(loginUser.getRole()));
 		if (!isAdmin) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -298,7 +298,7 @@ public class PurchaseController {
 	public String updateTranCode(@RequestParam("tranNo") int tranNo, @RequestParam("tranCode") String toCode,
 			HttpSession session, HttpServletResponse response) throws Exception {
 
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 
 		Purchase purchase = purchaseService.getPurchase(tranNo);
 		if (purchase == null) {
@@ -338,7 +338,7 @@ public class PurchaseController {
 	public String updateTranCodeByProd(@RequestParam("prodNo") int prodNo,
 			@RequestParam(value = "page", required = false) Integer page, HttpSession session) throws Exception {
 
-		User loginUser = (User) (session != null ? session.getAttribute("user") : null);
+		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
 		boolean isAdmin = (loginUser != null && loginUser.getRole() != null && !"user".equals(loginUser.getRole()));
 		// 액션은 비정상 접근 시 검색 목록으로 돌려보냈지만, 여기서는 동일한 결과로 수렴
 		if (!isAdmin) {
