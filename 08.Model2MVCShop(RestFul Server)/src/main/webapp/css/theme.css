@@ -1,0 +1,59 @@
+
+/* theme.css - 공통 테마 (로직은 건드리지 않고, 시각만 개선) */
+:root{
+  --brand:#0d6efd;
+  --brand-2:#6c757d;
+  --bg:#f8f9fa;
+  --text:#212529;
+}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
+  line-height:1.5;
+}
+
+/* 제목 */
+.section-title{
+  font-size:1.25rem;
+  margin: 1rem 0 .75rem;
+  padding-bottom:.25rem;
+  border-bottom:1px solid #e5e7eb;
+}
+
+/* 테이블 */
+table{ width:100%; border-collapse:collapse }
+table.table{ background:#fff }
+table.table th, table.table td{ vertical-align:middle }
+.dot, .line, .bar{ border-bottom:1px dashed #dee2e6; height:1px }
+
+/* 폼 */
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="search"], textarea{
+  display:block; width:100%; padding:.5rem .75rem; border:1px solid #ced4da; border-radius:.5rem; background:#fff
+}
+select{
+  display:block; width:100%; padding:.5rem 2rem .5rem .75rem; border:1px solid #ced4da; border-radius:.5rem; background:#fff;
+  appearance:none;
+}
+
+/* 검색바 수평 및 폭 보정 */
+.search-bar .form-select{ min-width:10rem }
+.search-bar .form-control{ min-width:14rem }
+
+/* 버튼 */
+.btn{ display:inline-block; padding:.45rem .9rem; border-radius:.5rem; border:1px solid transparent; text-decoration:none; cursor:pointer }
+.btn-primary{ background:var(--brand); border-color:var(--brand); color:#fff }
+.btn-outline{ background:#fff; border-color:#ced4da; color:#212529 }
+.btn-sm{ padding:.25rem .6rem; font-size:.875rem; border-radius:.4rem }
+.btn + .btn{ margin-left:.25rem }
+
+/* 페이지네이션 중앙 */
+.pagenav-center{ display:flex; justify-content:center; margin:1rem 0 }
+
+/* 카드: 과한 hover 제거 */
+.card{ background:#fff; border:1px solid #e9ecef; border-radius:1rem; box-shadow:none }
+.card:hover{ box-shadow:none }
+
+/* 사이드바 */
+.sidebar{ padding:1rem }
