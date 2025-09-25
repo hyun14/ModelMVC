@@ -1,0 +1,131 @@
+
+/* 이미지 보더라인 삭제 */
+IMG {  border-style: none}
+
+/* 스크롤바 정의 */
+BODY {
+scrollbar-3dlight-color: #ffffff;
+scrollbar-highlight-color: #ffffff;
+scrollbar-face-color: #DEE7EB;
+scrollbar-arrow-color: #6F9BAA;
+scrollbar-track-color: #F7F7F7;
+scrollbar-darkshadow-color: #ffffff;
+scrollbar-shadow-color: #B8C4C5;}
+
+
+a.menu		{ font-size: 9pt; font-family: 굴림체; color: #ff0000; text-decoration: none; }
+
+/* 링크 속성 */
+a:link    { color: #333333; text-decoration: none; cursor: pointer; }
+a:hover   { color: #347BD9; text-decoration: none; }
+a:active  { color: #347BD9; text-decoration: none; }
+a:visited { color: #333333; text-decoration: none; }
+/* onfocus는 CSS 속성이 아님 → 아래처럼 처리 */
+a:focus   { outline: 2px solid #347BD9; outline-offset: 2px; }
+
+/* 전체 텍스트 속성 */
+BODY, TABLE, TR, TD, SELECT,INPUT,DIV,SPAN,FORM,TEXTAREA
+{ font-family: "MS Gothic"; font-size: 12px; color: #333333; }
+
+/* 타이틀1 배경이미지와 텍스트 속성 */
+ .Depth01 { 
+		font-size: 14px; 
+	color: #ffffff;
+	font-weight:bold;
+	line-height: 26px;
+	text-indent: 15px;
+	background-image: url(/sample/images/left/leftMenuDep01Bg.gif);
+	background-repeat:no-repeat;
+   	}
+ 
+ 	 /* 타이틀2 배경이미지와 텍스트 속성 - 마우스 이벤트가 없을때와 기본일때.*/
+	.Depth02on { 
+	font-size: 12px; 
+	line-height: 25px;
+	color: #505050;
+	font-weight:normal;
+	text-indent: 19px;
+	background-image: url(/sample/images/left/leftMenuDep02_on.gif);
+	background-repeat:no-repeat;
+  	}
+  
+   /* 타이틀2 배경이미지와 텍스트 속성 - 마우스 이벤트가 없을때와 기본일때.*/
+	.Depth02off { 
+	 font-size: 12px; 
+	line-height: 25px;
+	color: #505050;
+	font-weight:normal;
+	text-indent: 19px;
+	background-image: url(/sample/images/left/leftMenuDep02_off.gif);
+	background-repeat:no-repeat;
+  	}
+
+/* 타이틀3 배경이미지와 텍스트 속성 */
+	.Depth03 { 
+	font-size: 12px; 
+	line-height: 20px;
+	color: #505050;
+	font-weight:normal;
+	text-indent: 14px;
+	background-image: url(/sample/images/left/leftMenuDep03Bg.gif);
+	background-repeat:no-repeat;
+ 	}
+
+	.DepthEnd {
+background-image: url(/sample/images/left/space_line.gif);
+line-height: 5px;
+background-repeat:no-repeat;
+	}
+	
+/* 타이틀1 배경이미지와 텍스트 속성 */	
+.layer_submenu_bg {
+	background-image:  url(/sample/images/left/menuLayerBg.gif);
+	background-position: right;
+	background-repeat: repeat;
+	text-align: center;
+}
+
+.link-item { color:#0066cc; cursor:pointer; }
+.link-item:hover { text-decoration: underline; }
+
+/* ===========================
+   Header 로그인/로그아웃 스타일
+   - HTML 구조상 width로 식별되므로 속성 셀렉터 + :not(:empty)로 한정
+   - 빈 셀에는 커서/효과가 적용되지 않도록 처리
+   =========================== */
+
+/* 기본 링크 느낌(색상만 살짝 강조, 밑줄은 hover에서만) */
+table[width="100%"][height="50"] td[width="115"]:not(:empty),
+table[width="100%"][height="50"] td[width="56"]:not(:empty) {
+  cursor: pointer;
+  color: #0a58ca;              /* 링크 느낌의 파란색 */
+  font-weight: 600;            /* 살짝 강조 */
+  text-decoration: none;       /* 기본은 밑줄 없음 */
+  user-select: none;           /* 드래그로 선택되지 않게 */
+  transition: color .15s ease, background-color .15s ease, transform .05s ease;
+  border-radius: 4px;          /* hover 배경을 둥글게 보이게 */
+  padding: 2px 4px;            /* hover 배경이 글자에 딱 붙지 않게 */
+  display: inline-block;       /* padding 적용 위해 inline-block */
+}
+
+/* 호버 시 시각적 피드백(색 진하게 + 연한 배경 + 밑줄) */
+table[width="100%"][height="50"] td[width="115"]:not(:empty):hover,
+table[width="100%"][height="50"] td[width="56"]:not(:empty):hover {
+  color: #084298;
+  background-color: rgba(13, 110, 253, 0.10);
+  text-decoration: underline;
+}
+
+/* 클릭(활성) 시 살짝 눌리는 느낌 */
+table[width="100%"][height="50"] td[width="115"]:not(:empty):active,
+table[width="100%"][height="50"] td[width="56"]:not(:empty):active {
+  transform: translateY(1px);
+}
+
+/* 포커스 링(접근성) — td는 기본 포커스가 없지만 혹시나 탭 가능할 때 대비 */
+table[width="100%"][height="50"] td[width="115"]:not(:empty):focus,
+table[width="100%"][height="50"] td[width="56"]:not(:empty):focus {
+  outline: 2px solid rgba(13, 110, 253, 0.6);
+  outline-offset: 2px;
+  text-decoration: underline;
+}

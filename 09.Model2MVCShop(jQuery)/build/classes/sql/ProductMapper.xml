@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductMapper">
+
+  <!-- <select id="findProduct" parameterType="int" resultMap="ResultMaps.productMap">
+    SELECT
+      prod_no         AS prodNo,
+      prod_name       AS prodName,
+      prod_detail     AS prodDetail,
+      manufacture_day AS manuDate,
+      price           AS price,
+      image_file      AS fileName,
+      reg_date        AS regDate
+    FROM product
+    WHERE prod_no = #{value:NUMERIC}
+  </select> -->
+  
+  <select id="findProduct" parameterType="int" resultMap="ResultMaps.productResultMap">
+    SELECT
+      prod_no,
+      prod_name,
+      prod_detail,
+      manufacture_day,
+      price,
+      image_file,
+      reg_date
+    FROM product
+    WHERE prod_no = #{value:NUMERIC}
+  </select>
+
+  <!-- ProductMapper.xml -->
+  <insert id="addProduct" parameterType="product">
+    <!-- ① INSERT 전에 시퀀스 뽑아서 product.prodNo 에 세팅 -->
+    <selectKey keyProperty="prodNo" resultType="int" order="BEFORE">
+      SELECT seq_product_prod_no.NEXTVAL FROM dual
+    </selectKey>
+  
+    INSERT INTO product (
+      prod_no,
+      prod_name
+      <if test="prodDetail != null and prodDetail != ''">, prod_detail</if>
+      <if test="manuDate   != null and manuDate   != ''">, manufacture_day</if>
+      , price
+      , reg_date
+    )
+    VALUES (
+      <!-- ② 여기서는 방금 세팅된 #{prodNo} 사용 -->
+      #{prodNo, jdbcType=NUMERIC},
+      #{prodName,  jdbcType=VARCHAR}
+      <if test="prodDetail != null and prodDetail != ''">, #{prodDetail, jdbcType=VARCHAR}</if>
+      <if test="manuDate   != null and manuDate   != ''">, #{manuDate,   jdbcType=VARCHAR}</if>
+      , #{price,    jdbcType=NUMERIC}
+      , SYSDATE
+    )
+  </insert>
+
+  <update id="updateProduct" parameterType="product">
+    UPDATE product
+    <set>
+      <if test="prodName  != null and prodName  != ''">
+        prod_name = #{prodName,jdbcType=VARCHAR},
+      </if>
+      <if test="prodDetail!= null and prodDetail!= ''">
+        prod_detail = #{prodDetail,jdbcType=VARCHAR},
+      </if>
+      <if test="manuDate  != null and manuDate  != ''">
+        manufacture_day = #{manuDate,jdbcType=VARCHAR},
+      </if>
+      price = #{price,jdbcType=NUMERIC}
+    </set>
+    WHERE prod_no = #{prodNo,jdbcType=NUMERIC}
+  </update>
+
+  <select id="getProductList" parameterType="search" resultMap="ResultMaps.productMap">
+    SELECT * FROM (
+      SELECT inner_t.*, ROWNUM rn FROM (
+        SELECT
+          p.prod_no         AS prodNo,
+          p.prod_name       AS prodName,
+          p.prod_detail     AS prodDetail,
+          p.manufacture_day AS manuDate,
+          p.price           AS price,
+          p.reg_date        AS regDate,
+          tl.tran_status_code AS proTranCode
+        FROM product p
+        LEFT JOIN (
+          SELECT prod_no, tran_status_code FROM (
+            SELECT t.prod_no, t.tran_status_code,
+                   ROW_NUMBER() OVER (PARTITION BY t.prod_no ORDER BY t.order_data DESC, t.tran_no DESC) rn
+            FROM transaction t
+          ) WHERE rn = 1
+        ) tl ON tl.prod_no = p.prod_no
+        <where>
+          <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
+          <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
+          <if test="kw != ''">
+            <choose>
+              <when test='cond.equals("0")'>
+                p.prod_no = TO_NUMBER(#{kw})
+              </when>
+              <when test='cond.equals("1")'>
+                p.prod_name LIKE '%' || #{kw} || '%'
+              </when>
+              <when test='cond.equals("2")'>
+                p.price = TO_NUMBER(#{kw})
+              </when>
+              <otherwise>
+                p.prod_name LIKE '%' || #{kw} || '%'
+              </otherwise>
+            </choose>
+          </if>
+        </where>
+        ORDER BY p.prod_no DESC
+      ) inner_t
+      WHERE ROWNUM &lt;= (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+    )
+    WHERE rn BETWEEN ((#{currentPage:NUMERIC} - 1) * #{pageSize:NUMERIC} + 1)
+                 AND (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+  </select>
+
+  <select id="getProductTotalCount" parameterType="search" resultType="int">
+    SELECT COUNT(1)
+    FROM product p
+    <where>
+      <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
+      <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
+      <if test="kw != ''">
+        <choose>
+          <when test='cond.equals("0")'>
+            p.prod_no = TO_NUMBER(#{kw})
+          </when>
+          <when test='cond.equals("1")'>
+            p.prod_name LIKE '%' || #{kw} || '%'
+          </when>
+          <when test='cond.equals("2")'>
+            p.price = TO_NUMBER(#{kw})
+          </when>
+          <otherwise>
+            p.prod_name LIKE '%' || #{kw} || '%'
+          </otherwise>
+        </choose>
+      </if>
+    </where>
+  </select>
+
+  <select id="getProductListByUser" parameterType="search" resultMap="ResultMaps.productMap">
+    SELECT * FROM (
+      SELECT inner_t.*, ROWNUM rn FROM (
+        SELECT
+          p.prod_no         AS prodNo,
+          p.prod_name       AS prodName,
+          p.prod_detail     AS prodDetail,
+          p.manufacture_day AS manuDate,
+          p.price           AS price,
+          p.reg_date        AS regDate,
+          tl.tran_status_code AS proTranCode
+        FROM product p
+        LEFT JOIN (
+          SELECT prod_no, tran_status_code FROM (
+            SELECT t.prod_no, t.tran_status_code,
+                   ROW_NUMBER() OVER (PARTITION BY t.prod_no ORDER BY t.order_data DESC, t.tran_no DESC) rn
+            FROM transaction t
+          ) WHERE rn = 1
+        ) tl ON tl.prod_no = p.prod_no
+        <where>
+          <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
+          <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
+          <if test="kw != ''">
+            <choose>
+              <when test='cond.equals("0")'>
+                p.prod_no = TO_NUMBER(#{kw})
+              </when>
+              <when test='cond.equals("1")'>
+                p.prod_name LIKE '%' || #{kw} || '%'
+              </when>
+              <when test='cond.equals("2")'>
+                p.price = TO_NUMBER(#{kw})
+              </when>
+              <otherwise>
+                p.prod_name LIKE '%' || #{kw} || '%'
+              </otherwise>
+            </choose>
+          </if>
+          AND tl.tran_status_code IS NULL
+        </where>
+        ORDER BY p.prod_no DESC
+      ) inner_t
+      WHERE ROWNUM &lt;= (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+    )
+    WHERE rn BETWEEN ((#{currentPage:NUMERIC} - 1) * #{pageSize:NUMERIC} + 1)
+                 AND (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+  </select>
+
+  <select id="getProductTotalCountByUser" parameterType="search" resultType="int">
+    SELECT COUNT(1)
+    FROM product p
+    LEFT JOIN (
+      SELECT prod_no, tran_status_code FROM (
+        SELECT t.prod_no, t.tran_status_code,
+               ROW_NUMBER() OVER (PARTITION BY t.prod_no ORDER BY t.order_data DESC, t.tran_no DESC) rn
+        FROM transaction t
+      ) WHERE rn = 1
+    ) tl ON tl.prod_no = p.prod_no
+    <where>
+      <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
+      <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
+      <if test="kw != ''">
+        <choose>
+          <when test='cond.equals("0")'>
+            p.prod_no = TO_NUMBER(#{kw})
+          </when>
+          <when test='cond.equals("1")'>
+            p.prod_name LIKE '%' || #{kw} || '%'
+          </when>
+          <when test='cond.equals("2")'>
+            p.price = TO_NUMBER(#{kw})
+          </when>
+          <otherwise>
+            p.prod_name LIKE '%' || #{kw} || '%'
+          </otherwise>
+        </choose>
+      </if>
+      AND tl.tran_status_code IS NULL
+    </where>
+  </select>
+  
+  <!-- image 시퀀스 -->
+  <select id="getNextImageNo" resultType="int">
+    SELECT seq_product_image_no.NEXTVAL FROM dual
+  </select>
+  
+  <insert id="insertProductImage" parameterType="com.model2.mvc.service.domain.ProductImage">
+    INSERT INTO product_image (image_no, prod_no, image_path, sort_ord)
+    VALUES (#{imageNo}, #{prodNo}, #{imagePath}, #{sortOrd})
+  </insert>
+  
+  <select id="selectProductImages" parameterType="int"
+        resultType="com.model2.mvc.service.domain.ProductImage">
+  SELECT image_no AS imageNo,
+         prod_no  AS prodNo,
+         image_path AS imagePath,
+         sort_ord AS sortOrd
+  FROM product_image
+  WHERE prod_no = #{_parameter}
+  ORDER BY NVL(sort_ord, 999999), image_no
+</select>
+  
+  <delete id="deleteProductImagesByProd" parameterType="int">
+    DELETE FROM product_image WHERE prod_no = #{_parameter}
+  </delete>
+
+</mapper>

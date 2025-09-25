@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductImageMapper">
+
+  <!-- 이미지 등록 -->
+  <insert id="addImage" parameterType="map">
+    <selectKey keyProperty="imgNo" resultType="int" order="BEFORE">
+      SELECT seq_product_image_img_no.NEXTVAL FROM dual
+    </selectKey>
+    INSERT INTO product_image
+      (img_no, prod_no, file_name, file_path, sort_order, is_primary)
+    VALUES
+      (#{imgNo}, #{prodNo}, #{fileName}, #{filePath}, 
+       #{sortOrder, jdbcType=NUMERIC}, #{isPrimary, jdbcType=CHAR})
+  </insert>
+
+  <!-- 해당 상품 이미지 전체 -->
+  <select id="listImagesByProdNo" parameterType="int" resultType="map">
+    SELECT img_no     AS imgNo,
+           prod_no    AS prodNo,
+           file_name  AS fileName,
+           file_path  AS filePath,
+           sort_order AS sortOrder,
+           is_primary AS isPrimary
+    FROM product_image
+    WHERE prod_no = #{value}
+    ORDER BY CASE WHEN is_primary='Y' THEN 0 ELSE 1 END,
+             sort_order, img_no
+  </select>
+
+  <!-- 이미지 일괄 삭제(수정 시 교체용) -->
+  <delete id="deleteImagesByProdNo" parameterType="int">
+    DELETE FROM product_image WHERE prod_no = #{value}
+  </delete>
+
+</mapper>
