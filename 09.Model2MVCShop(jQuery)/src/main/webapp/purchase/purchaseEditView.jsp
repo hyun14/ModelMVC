@@ -22,11 +22,9 @@
 <head>
   <title>구매 정보 수정</title>
   <link rel="stylesheet" href="${ctx}/css/admin.css" type="text/css" />
+  <link rel="stylesheet" href="${ctx}/css/bnt-click.css" type="text/css" />
+  
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <style>
-    .btn-like { cursor:pointer; color:#0066cc; }
-    .btn-like:hover { text-decoration: underline; }
-  </style>
   <script type="text/javascript">
     // 동적 hidden 유틸
     function clearDynamicHidden(){ $("#updateForm").find("input.dynamic-extra").remove(); }
@@ -54,6 +52,25 @@
         // tranNo는 기본 hidden으로 이미 존재, 검색조건 hidden들도 폼에 유지되어 같이 전송됨
         submitWith("./getPurchase", "get");
       });
+      
+     // === 버튼 전체(좌/중앙/우 캡 + 그 안의 이미지까지) 클릭 확장: 위임 ===
+     // tr 안 어디를 눌러도 같은 tr의 중앙(td.ct_btn01) 내부 .btn-like를 실행
+     $(document).on('click', 'tr:has(td.ct_btn01) td, tr:has(td.ct_btn01) td *', function (e) {
+       // .btn-like 자체를 눌렀다면 중복 트리거 방지
+       if ($(e.target).closest('.btn-like').length) {
+         return;
+       }
+       var $tr = $(this).closest('tr');
+       var $centerTd = $tr.find('td.ct_btn01').first();
+       var $btn = $centerTd.find('.btn-like').first();
+  
+       if ($btn.length) {
+         $btn.trigger('click');
+         e.preventDefault();
+         e.stopPropagation();
+       }
+     });
+
     });
   </script>
 </head>

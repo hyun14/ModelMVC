@@ -12,11 +12,9 @@
 <head>
   <title>구매 상세정보</title>
   <link rel="stylesheet" href="${ctx}/css/admin.css" type="text/css" />
+  <link rel="stylesheet" href="${ctx}/css/bnt-click.css" type="text/css" />
+  
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <style>
-    .btn-like { cursor:pointer; color:#0066cc; }
-    .btn-like:hover { text-decoration: underline; }
-  </style>
   <script type="text/javascript">
     // 동적 hidden 관리 유틸
     function clearDynamicHidden(){ $("#purchaseDetailForm").find("input.dynamic-extra").remove(); }
@@ -50,6 +48,27 @@
         clearDynamicHidden();
         submitWith("./listPurchase", "get");
       });
+      
+     // === 버튼 전체(좌/중앙/우 캡 + 그 안의 이미지까지) 클릭 확장: 위임 방식 ===
+     // - #purchaseDetailForm 범위로 스코프 한정
+     // - .btn-like 직접 클릭 시에는 중복 트리거 방지
+     $(document).on('click', '#purchaseDetailForm tr:has(td.ct_btn01) td, #purchaseDetailForm tr:has(td.ct_btn01) td *', function (e) {
+       // .btn-like 그 자체/자식 클릭이면 기본 핸들러에 맡기고 종료 (중복 트리거 방지)
+       if ($(e.target).closest('.btn-like').length) {
+         return;
+       }
+  
+       var $tr = $(this).closest('tr');
+       var $centerTd = $tr.find('td.ct_btn01').first();
+       var $btn = $centerTd.find('.btn-like').first();
+  
+       if ($btn.length) {
+         $btn.trigger('click');
+         e.preventDefault();
+         e.stopPropagation();
+       }
+     });
+
     });
   </script>
 </head>

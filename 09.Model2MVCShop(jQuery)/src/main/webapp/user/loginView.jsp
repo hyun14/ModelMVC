@@ -1,5 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ page pageEncoding="UTF-8" %>
+
+<c:if test="${not empty loginError}">
+  <script>
+    // XSS 방지를 위해 JSTL fn:escapeXml 사용
+    alert("${fn:escapeXml(loginError)}");
+  </script>
+</c:if>
 
 <!DOCTYPE html>
 <html>
@@ -117,7 +126,7 @@
                 	<img src="/images/text_id.gif" width="100" height="30"/>
                 </td>
                 <td height="30">
-                  <input 	type="text" name="userId"  id="userId"  class="ct_input_g" 
+                  <input 	type="text" name="userId" value="${userId}"   id="userId"  class="ct_input_g" 
                   				style="width:180px; height:19px"  maxLength='50'/>          
           		</td>
                 <td width="20" height="30">&nbsp;</td>

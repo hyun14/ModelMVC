@@ -5,6 +5,7 @@
 <head>
   <title>회원정보조회</title>
   <link rel="stylesheet" href="/css/admin.css" type="text/css">
+  <link rel="stylesheet" href="/css/bnt-click.css" type="text/css">
 
   <!-- jQuery : 링크 없이 버튼 클릭으로 페이지 이동/검색조건 유지 -->
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -46,6 +47,37 @@
         submitWithSearch("./listUser");
       });
     });
+    
+ 	// 캡 td에 커서 표시용 클래스 부여(시각 피드백)
+    $("td.ct_btn01").each(function(){
+      const $center = $(this);
+      $center.prev("td").addClass("cap-left");
+      $center.next("td").addClass("cap-right");
+    });
+
+    // === 버튼 전체(좌/중앙/우 캡 + 그 안의 이미지까지) 클릭 확장: 위임 ===
+    // 내부 버튼( .btn-edit / .btn-list )을 직접 눌렀을 땐 중복 트리거 방지
+    $(document).on('click', 'tr:has(td.ct_btn01) td, tr:has(td.ct_btn01) td *', function (e) {
+      if ($(e.target).closest('.btn-edit, .btn-list').length) return;
+
+      var $innerTr = $(this).closest('tr');                // (중첩 구조에서도) 버튼이 들어있는 "그" tr
+      var $centerTd = $innerTr.children('td.ct_btn01').first();
+      var $btn = $centerTd.find('.btn-edit, .btn-list').first();
+
+      if ($btn.length) {
+        $btn.trigger('click');                             // 글자 아닌 곳을 눌러도 실행
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    // 캡 hover 시 중앙 버튼도 하이라이트(선택)
+    $(document).on('mouseenter', 'tr:has(td.ct_btn01) td', function(){
+      $(this).closest('tr').children('td.ct_btn01').addClass('hover');
+    }).on('mouseleave', 'tr:has(td.ct_btn01) td', function(){
+      $(this).closest('tr').children('td.ct_btn01').removeClass('hover');
+    });
+
   </script>
 </head>
 
@@ -131,23 +163,32 @@
     <td width="53%"></td>
     <td align="right">
       <table border="0" cellspacing="0" cellpadding="0">
-        <tr>
+        <!-- 버튼들이 들어있는 행에 btn-row 지정 -->
+        <tr class="btn-row">
           <!-- 수정 버튼 (updateUserView 로 이동) -->
-          <td width="17" height="23"><img src="/images/ct_btnbg01.gif" width="17" height="23"></td>
-          <td background="/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
-            <span class="btn-edit">수정</span>
+          <td class="cap-left"  width="17" height="23">
+            <img src="/images/ct_btnbg01.gif" width="17" height="23">
           </td>
-          <td width="14" height="23"><img src="/images/ct_btnbg03.gif" width="14" height="23"></td>
+          <td class="ct_btn01" background="/images/ct_btnbg02.gif" style="padding-top:3px;">
+            <span class="btn-like btn-edit">수정</span>
+          </td>
+          <td class="cap-right" width="14" height="23">
+            <img src="/images/ct_btnbg03.gif" width="14" height="23">
+          </td>
 
           <td width="30"></td>
 
           <!-- 목록 버튼 (관리자에게만 노출, listUser 로 이동) -->
           <c:if test="${sessionScope.loginUser.role == 'admin'}">
-            <td width="17" height="23"><img src="/images/ct_btnbg01.gif" width="17" height="23"></td>
-            <td background="/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
-              <span class="btn-list">목록</span>
+            <td class="cap-left"  width="17" height="23">
+              <img src="/images/ct_btnbg01.gif" width="17" height="23">
             </td>
-            <td width="14" height="23"><img src="/images/ct_btnbg03.gif" width="14" height="23"></td>
+            <td class="ct_btn01" background="/images/ct_btnbg02.gif" style="padding-top:3px;">
+              <span class="btn-like btn-list">목록</span>
+            </td>
+            <td class="cap-right" width="14" height="23">
+              <img src="/images/ct_btnbg03.gif" width="14" height="23">
+            </td>
           </c:if>
         </tr>
       </table>

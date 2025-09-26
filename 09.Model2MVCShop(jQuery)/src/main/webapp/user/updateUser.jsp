@@ -8,81 +8,84 @@
 	<meta charset="UTF-8">
 	<title>회원 정보 수정</title>
 	<link rel="stylesheet" href="/css/admin.css" type="text/css">
+    <link rel="stylesheet" href="/css/bnt-click.css" type="text/css">
 
 	<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script type="text/javascript">
-		// 전화번호 hidden 합성
-		function buildPhone() {
-			var p1 = $("select[name='phone1']").val();
-			var p2 = $.trim($("input[name='phone2']").val());
-			var p3 = $.trim($("input[name='phone3']").val());
-			return (p2 && p3) ? (p1 + "-" + p2 + "-" + p3) : "";
-		}
+    // 전화번호 hidden 합성
+    function buildPhone() {
+      var p1 = $("select[name='phone1']").val();
+      var p2 = $.trim($("input[name='phone2']").val());
+      var p3 = $.trim($("input[name='phone3']").val());
+      return (p2 && p3) ? (p1 + "-" + p2 + "-" + p3) : "";
+    }
+  
+    // 이메일 간단 검증
+    function isValidEmail(email) {
+      if (!email) return true; // 필수 아님 가정
+      return email.indexOf('@') > 0 && email.indexOf('.') > email.indexOf('@') + 1;
+    }
+  
+    // 공용 제출
+    function submitTo(actionUrl, method) {
+      var $f = $("form[name='detailForm']");
+      $f.attr("action", actionUrl);
+      $f.attr("method", method || "post");
+      $f.submit();
+    }
+  
+    // 수정 처리
+    function fncUpdateUser() {
+      var name = $.trim($("input[name='userName']").val());
+      if (!name) { alert("이름은 반드시 입력하셔야 합니다."); $("input[name='userName']").focus(); return; }
+      var email = $.trim($("input[name='email']").val());
+      if (!isValidEmail(email)) { alert("이메일 형식이 아닙니다."); $("input[name='email']").focus(); return; }
+      $("input:hidden[name='phone']").val(buildPhone());
+      submitTo("/user/updateUser", "post");
+    }
+  
+    $(function () {
+      // 초기 포커스
+      $("input[name='userName']").focus();
+  
+      // 휴대폰 앞자리 바꾸면 다음 칸 포커스
+      $("select[name='phone1']").on("change", function () {
+        $("input[name='phone2']").focus();
+      });
+  
+      // 이메일 변경시 즉석 검증
+      $("input[name='email']").on("change", function () {
+        var email = $.trim($(this).val());
+        if (!isValidEmail(email)) {
+          alert("이메일 형식이 아닙니다.");
+          $(this).focus();
+        }
+      });
+  
+      // 명시적 버튼 클래스 바인딩
+      $(document).on("click", ".btn-save", fncUpdateUser);
+      $(document).on("click", ".btn-cancel", function(){
+        submitTo("/user/getUser", "get");
+      });
+  
+      // === 행 전체 위임: .btn-row 안 어디를 눌러도 중앙 버튼 실행 ===
+      $(document).on("click", ".btn-row td, .btn-row td *", function (e) {
+        // 원래 버튼(span)을 직접 눌렀다면 중복 방지
+        if ($(e.target).closest(".btn-like, .btn-save, .btn-cancel").length) return;
+  
+        var $tr = $(this).closest(".btn-row");
+        var $center = $tr.find("td.ct_btn01").first();
+        var $btn = $center.find(".btn-like, .btn-save, .btn-cancel").first();
+  
+        if ($btn.length) {
+          $btn.trigger("click");
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    });
+</script>
 
-		// 이메일 간단 검증
-		function isValidEmail(email) {
-			if (!email) return true; // 필수 아님 가정
-			return email.indexOf('@') > 0 && email.indexOf('.') > email.indexOf('@') + 1;
-		}
-
-		// 공용 제출 함수 (검색조건/hidden은 폼에 이미 포함되어 함께 전송됨)
-		function submitTo(actionUrl, method) {
-			var $f = $("form[name='detailForm']");
-			$f.attr("action", actionUrl);
-			$f.attr("method", method || "post");
-			$f.submit();
-		}
-
-		// 수정 처리
-		function fncUpdateUser() {
-			var name = $.trim($("input[name='userName']").val());
-			if (!name) {
-				alert("이름은 반드시 입력하셔야 합니다.");
-				$("input[name='userName']").focus();
-				return;
-			}
-			var email = $.trim($("input[name='email']").val());
-			if (!isValidEmail(email)) {
-				alert("이메일 형식이 아닙니다.");
-				$("input[name='email']").focus();
-				return;
-			}
-			$("input:hidden[name='phone']").val(buildPhone());
-
-			// 수정은 POST /user/updateUser 로, 검색조건 hidden 함께 전송
-			submitTo("/user/updateUser", "post");
-		}
-
-		$(function () {
-			// 초기 포커스
-			$("input[name='userName']").focus();
-
-			// 휴대폰 앞자리 바꾸면 다음 칸 포커스
-			$("select[name='phone1']").on("change", function () {
-				$("input[name='phone2']").focus();
-			});
-
-			// 이메일 변경시 즉석 검증
-			$("input[name='email']").on("change", function () {
-				var email = $.trim($(this).val());
-				if (!isValidEmail(email)) {
-					alert("이메일 형식이 아닙니다.");
-					$(this).focus();
-				}
-			});
-
-			// "수정" 클릭
-			$("td.ct_btn01:contains('수정')").on("click", function () {
-				fncUpdateUser();
-			});
-
-			// "취소" 클릭 → 상세 화면으로 이동(GET /user/getUser)
-			// userId 및 검색조건 hidden 들이 폼에 있으므로 그대로 전달됨
-			$("td.ct_btn01:contains('취소')").on("click", function () {
-				submitTo("/user/getUser", "get");
-			});
-		});
-	</script>
 </head>
 
 <body bgcolor="#ffffff" text="#000000">
@@ -173,25 +176,40 @@
 	</table>
 
 	<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top:10px;">
-		<tr>
-			<td width="53%"></td>
-			<td align="right">
-				<table border="0" cellspacing="0" cellpadding="0">
-					<tr>
-						<td width="17" height="23"><img src="/images/ct_btnbg01.gif" width="17" height="23" /></td>
-						<td background="/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">수정</td>
-						<td width="14" height="23"><img src="/images/ct_btnbg03.gif" width="14" height="23" /></td>
+  <tr>
+    <td width="53%"></td>
+    <td align="right">
+      <table border="0" cellspacing="0" cellpadding="0">
+        <tr class="btn-row">
+          <!-- 수정 -->
+          <td class="cap-left"  width="17" height="23">
+            <img src="/images/ct_btnbg01.gif" width="17" height="23" />
+          </td>
+          <td class="ct_btn01" background="/images/ct_btnbg02.gif" style="padding-top:3px;">
+            <span class="btn-like btn-save">수정</span>
+          </td>
+          <td class="cap-right" width="14" height="23">
+            <img src="/images/ct_btnbg03.gif" width="14" height="23" />
+          </td>
 
-						<td width="30"></td>
+          <td width="30"></td>
 
-						<td width="17" height="23"><img src="/images/ct_btnbg01.gif" width="17" height="23" /></td>
-						<td background="/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">취소</td>
-						<td width="14" height="23"><img src="/images/ct_btnbg03.gif" width="14" height="23" /></td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-	</table>
+          <!-- 취소 -->
+          <td class="cap-left"  width="17" height="23">
+            <img src="/images/ct_btnbg01.gif" width="17" height="23" />
+          </td>
+          <td class="ct_btn01" background="/images/ct_btnbg02.gif" style="padding-top:3px;">
+            <span class="btn-like btn-cancel">취소</span>
+          </td>
+          <td class="cap-right" width="14" height="23">
+            <img src="/images/ct_btnbg03.gif" width="14" height="23" />
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
 </form>
 
 </body>
