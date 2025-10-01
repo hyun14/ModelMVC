@@ -46,8 +46,12 @@ public interface ProductDao {
 	
 	
 	// === 신규 추가 ===
-    int getNextImageNo();
-    void insertProductImage(ProductImage img);
-    List<ProductImage> selectProductImages(int prodNo);
-    int deleteProductImagesByProd(int prodNo);
+	public int getNextImageNo();
+	public void insertProductImage(ProductImage img);
+	public List<ProductImage> selectProductImages(int prodNo);
+	public int deleteProductImagesByProd(int prodNo);
+	
+	public int restock(int prodNo, int addQty);
+	public int decreaseQuantity(int prodNo, int qty);
+	public int updateIsSell(int prodNo);
 }

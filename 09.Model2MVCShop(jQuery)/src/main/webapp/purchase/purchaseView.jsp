@@ -53,8 +53,20 @@
     $(function(){
       // 구매(제출): ./addPurchase (POST)
       $(document).on("click", ".btn-buy", function(){
-        clearDynamicHidden();
-        submitWith("./addPurchase", "post");
+    	  
+    	  var sellQuantity = parseInt($("input[name='sellQuantity']").val());
+    	  	  var maxQuantity = parseInt("${product.quantity}");
+    	      if (isNaN(sellQuantity) || sellQuantity <= 0) {
+    	          alert("구매수량은 1 이상의 숫자를 입력해야 합니다.");
+    	          return;
+    	      }
+    	      if (sellQuantity > maxQuantity) {
+    	          alert("구매수량이 재고보다 많을 수 없습니다. (현재 재고: " + maxQuantity + "개)");
+    	          return;
+    	      }
+    	  
+          clearDynamicHidden();
+          submitWith("./addPurchase", "post");
       });
 
       // 취소: 상품상세로 복귀 (GET)
@@ -93,6 +105,7 @@
       <!-- 필수 키 -->
       <input type="hidden" name="purchaseProd.prodNo" value="${product.prodNo}" />
       <input type="hidden" name="prodNo" value="${product.prodNo}" />
+      <input type="hidden" name="purchaseProd.prodName" value="${product.prodName}" />
 
       <!-- (선택) 검색조건/페이지 유지: 있으면 전달 -->
       <c:if test="${not empty param.currentPage or (not empty search and not empty search.currentPage)}">
@@ -111,6 +124,9 @@
       <c:if test="${not empty param.menu or not empty menu}">
         <input type="hidden" name="menu" value="${not empty param.menu ? param.menu : menu}" />
       </c:if>
+      <c:if test="${not empty param.seeAll}">
+        <input type="hidden" name="seeAll" value="${param.seeAll}" />
+      </c:if>
 
       <h2>구매하기</h2>
 
@@ -121,6 +137,7 @@
         <div>상품명: ${product.prodName}</div>
         <div>상세정보: ${product.prodDetail}</div>
         <div>제조일자: ${manuDateDisp}</div>
+        <div>현재 재고: ${product.quantity} 개</div>
         <div>가격: <fmt:formatNumber value="${product.price}" /></div>
         <div>등록일자: ${regDateDisp}</div>
       </fieldset>
@@ -153,6 +170,10 @@
             <option value="CSH">현금구매</option>
             <option value="CRD">카드결제</option>
           </select>
+        </div>
+        <div>
+          <label>구매수량</label>
+          <input type="number" name="sellQuantity" min="1" max="${product.quantity}" value="1" />
         </div>
         <div>
           <label>구매요청사항</label>

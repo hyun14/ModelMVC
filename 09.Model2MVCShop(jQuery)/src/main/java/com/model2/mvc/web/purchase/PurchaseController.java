@@ -1,10 +1,7 @@
 package com.model2.mvc.web.purchase;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
@@ -13,9 +10,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.model2.mvc.common.Page;
@@ -85,7 +83,7 @@ public class PurchaseController {
 	// 컨트롤러 메서드 : 폼 파라미터를 Purchase 도메인으로 일괄 바인딩
 	// - 폼 필드명이 Purchase의 프로퍼티와 일치하면 스프링이 자동으로 세팅함
 	// - 중첩 객체(Product, User)도 "purchaseProd.prodNo" 같은 점 표기법으로 바인딩 가능
-	@RequestMapping(value = "/addPurchase", method = RequestMethod.POST)
+	@PostMapping(value = "/addPurchase")
 	public String addPurchase(HttpSession session, @ModelAttribute("purchase") Purchase purchase // 폼 전체를 도메인으로 받음
 	) throws Exception {
 
@@ -95,6 +93,18 @@ public class PurchaseController {
 		if (loginUser != null) {
 			purchase.setBuyer(loginUser);
 		}
+		
+		// 수량 기본/검증
+		int qty = purchase.getSellQuantity() > 0 ? purchase.getSellQuantity() : 1;
+		int prodNo = purchase.getPurchaseProd() != null ? purchase.getPurchaseProd().getProdNo() : 0;
+		Product p = productService.findProduct(prodNo);
+		if (p == null || p.getQuantity() <= 0) {
+			return "redirect:/product/getProduct?prodNo=" + prodNo; // 재고 0이면 구매불가
+		}
+		if (qty > p.getQuantity()) {
+			qty = p.getQuantity(); // 상한 보정 또는 에러 처리
+		}
+		purchase.setSellQuantity(qty);
 
 		// [필수/중첩 데이터 확인] : 상품번호(prodNo)는 중첩 객체로 넘어와야 함
 		// - 폼에서 name="purchaseProd.prodNo" 로 넘어오지 않으면 NullPointer 방지
@@ -251,42 +261,39 @@ public class PurchaseController {
 		// [의미] 기존 목록 JSP로 포워드(경로/파일명 변경 없음)
 		return "forward:/purchase/purchaseProductView.jsp";
 	}
-
-	// =========================================================================
-	// 7) 판매 목록(관리자 전역) : /listSale.do (액션: ListSaleAction)
-	// - 입력: page (currentPage 병행), pageSize(옵션)
-	// - 권한: 관리자만
-	// - 모델: map, search
-	// - 리턴: forward:/purchase/saleListView.jsp
-	// =========================================================================
-	@RequestMapping("/listSale")
-	public String listSale(HttpSession session,
-			@RequestParam(value = "currentPage", required = false) Integer currentPage,
-			@RequestParam(value = "page", required = false) Integer page,
-			@RequestParam(value = "pageSize", required = false) Integer size, HttpServletResponse response, Model model)
-			throws Exception {
-
-		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
-		boolean isAdmin = (loginUser != null && loginUser.getRole() != null && !"user".equals(loginUser.getRole()));
-		if (!isAdmin) {
-			response.sendError(HttpServletResponse.SC_FORBIDDEN);
-			return null;
-		}
-
-		int cp = resolveCurrentPage(currentPage, page);
-		int ps = resolvePageSize(size);
-
-		Search search = new Search();
-		search.setCurrentPage(cp);
-		search.setPageSize(ps);
-
-		Map<String, Object> map = purchaseService.getSaleList(search);
-
-		model.addAttribute("map", map);
-		model.addAttribute("search", search);
-
-		return "forward:/purchase/saleListView.jsp";
-	}
+	/*미구현 
+	 * // =========================================================================
+	 * // 7) 판매 목록(관리자 전역) : /listSale.do (액션: ListSaleAction) // - 입력: page
+	 * (currentPage 병행), pageSize(옵션) // - 권한: 관리자만 // - 모델: map, search // - 리턴:
+	 * forward:/purchase/saleListView.jsp //
+	 * =========================================================================
+	 * 
+	 * @RequestMapping("/listSale") public String listSale(HttpSession session,
+	 * 
+	 * @RequestParam(value = "currentPage", required = false) Integer currentPage,
+	 * 
+	 * @RequestParam(value = "page", required = false) Integer page,
+	 * 
+	 * @RequestParam(value = "pageSize", required = false) Integer size,
+	 * HttpServletResponse response, Model model) throws Exception {
+	 * 
+	 * User loginUser = (User) (session != null ? session.getAttribute("loginUser")
+	 * : null); boolean isAdmin = (loginUser != null && loginUser.getRole() != null
+	 * && !"user".equals(loginUser.getRole())); if (!isAdmin) {
+	 * response.sendError(HttpServletResponse.SC_FORBIDDEN); return null; }
+	 * 
+	 * int cp = resolveCurrentPage(currentPage, page); int ps =
+	 * resolvePageSize(size);
+	 * 
+	 * Search search = new Search(); search.setCurrentPage(cp);
+	 * search.setPageSize(ps);
+	 * 
+	 * Map<String, Object> map = purchaseService.getSaleList(search);
+	 * 
+	 * model.addAttribute("map", map); model.addAttribute("search", search);
+	 * 
+	 * return "forward:/purchase/saleListView.jsp"; }
+	 */
 
 	// =========================================================================
 	// 8) 거래상태 변경 : /updateTranCode.do (액션: UpdateTranCodeAction)
@@ -335,24 +342,27 @@ public class PurchaseController {
 	// - 액션: UpdateTranCodeByProdAction
 	// =========================================================================
 	@RequestMapping("/updateTranCodeByProd")
-	public String updateTranCodeByProd(@RequestParam("prodNo") int prodNo,
+	public String updateTranCodeByProd(@RequestParam("tranNo") int tranNo,
 			@RequestParam(value = "page", required = false) Integer page, HttpSession session) throws Exception {
-
-		User loginUser = (User) (session != null ? session.getAttribute("loginUser") : null);
+		User loginUser = (session != null) ? (User) session.getAttribute("loginUser") : null;
 		boolean isAdmin = (loginUser != null && loginUser.getRole() != null && !"user".equals(loginUser.getRole()));
-		// 액션은 비정상 접근 시 검색 목록으로 돌려보냈지만, 여기서는 동일한 결과로 수렴
 		if (!isAdmin) {
 			return "redirect:/purchase/listProduct?menu=search";
 		}
-
-		int tranNo = purchaseService.findPurchaseByProdNo(prodNo);
-		int goPage = (page != null && page > 0) ? page : 1;
-
 		if (tranNo > 0) {
-			// tranNo 사용
 			purchaseService.updateTranCode(tranNo, Purchase.TRAN_SHIPPING);
 		}
-
+		int goPage = (page != null && page > 0) ? page : 1;
 		return "redirect:/product/listProduct?menu=manage&page=" + goPage;
 	}
+	
+	@GetMapping("/listPurchaseByProd")
+	public String listPurchaseByProd(@RequestParam("prodNo") int prodNo, HttpSession session, Model model) throws Exception {
+	    User u = (session != null) ? (User)session.getAttribute("loginUser") : null;
+	    if (u==null || "user".equals(u.getRole())) return "redirect:/error/forbidden.jsp";
+	    model.addAttribute("orders", purchaseService.getPurchaseListByProd(prodNo));
+	    model.addAttribute("prodNo", prodNo);
+	    return "forward:/purchase/listPurchaseByProd.jsp";
+	}
+
 }

@@ -7,6 +7,10 @@
 <c:set var="menuVal" value="${not empty param.menu ? param.menu : menu}" />
 <c:set var="isUserList" value="${menuVal eq 'search'}" />
 
+<c:if test="${empty isAdmin}">
+  <c:set var="isAdmin" value="${not empty loginUser and loginUser.role eq 'admin'}" />
+</c:if>
+
 <%-- 타이틀 문자열 계산 --%>
 <c:set var="pageTitle" value="상품 목록조회" />
 <c:if test="${menuVal eq 'manage'}">
@@ -77,7 +81,7 @@
         clearDynamicHidden();
         addHidden("menu", menu);
         addHidden("prodNo", prodNo);
-        if (code) addHidden("code", code);
+        if (code) { addHidden("code", code); }
 
         submitWith("./getProduct", "get");
       });
@@ -87,12 +91,20 @@
         e.stopPropagation(); // 행 클릭과 충돌 방지
         var prodNo = $(this).data("prodno");
 
-        clearDynamicHidden();
-        addHidden("prodNo", prodNo);
-        // 페이지/검색조건은 폼의 고정 hidden이 같이 전송됨
-        submitWith("${ctx}/purchase/updateTranCodeByProd", "get");
+        var form = $('<form></form>');
+        form.attr('method', 'get');
+        form.attr('action', '${ctx}/purchase/listPurchaseByProd');
+        form.append($('<input type="hidden" name="prodNo" value="' + prodNo + '">'));
+        $('body').append(form);
+        form.submit();
       });
     });
+    
+    $(function(){
+    	$('#seeAllToggle').on('change', function(){
+    		fncGetList(1); // 토글 변경 시 1페이지부터 다시 검색
+    		});
+    	});
   </script>
 </head>
 
@@ -131,6 +143,9 @@
     <c:if test="${not empty search.searchKeyword}">
       <input type="hidden" name="searchKeyword" value="${search.searchKeyword}" />
     </c:if>
+    <c:if test="${!isAdmin}">
+        <input type="hidden" name="seeAll" value="${search.seeAll == 'true' || seeAll == true ? 'true' : 'false'}" />
+    </c:if>
 
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top:10px;">
       <tr>
@@ -150,6 +165,15 @@
       </tr>
     </table>
   </form>
+    
+    <c:if test="${!isAdmin}">
+      <div style="margin-top: 5px;">
+        <label><input type="checkbox" id="seeAllToggle" name="seeAll" value="true" 
+            onchange="$('input[name=seeAll]').val(this.checked); fncGetList(1);"
+        <c:if test="${search.seeAll == 'true' or seeAll == true}">checked</c:if>/> 모두보기(재고 0 포함)</label>
+      </div>
+    </c:if>
+  
   <!-- [검색 폼] END -->
 
   <!-- [요약 정보] START -->
@@ -169,17 +193,16 @@
       <th class="ct_list_b" width="1"></th>
       <th class="ct_list_b" width="120">가격</th>
       <th class="ct_list_b" width="1"></th>
+      <th class="ct_list_b" width="80">수량</th>
+      <th class="ct_list_b" width="1"></th>
       <th class="ct_list_b" width="150">거래상태</th>
     </tr>
 
     <c:forEach var="product" items="${list}">
-      <c:set var="code" value="${product.proTranCode}" />
       <%-- 클릭 시 상세로 보낼 필수 데이터는 data-*로 저장 --%>
       <tr class="ct_list_pop click-row"
           data-mode="${menuVal}"
           data-prodno="${product.prodNo}"
-          data-code="${code}"
-          <c:if test="${isUserList and not empty product.proTranCode}">data-disabled="true"</c:if>
       >
         <td align="center">${product.prodNo}</td>
         <td></td>
@@ -191,38 +214,31 @@
         <td></td>
         <td class="price-cell"><fmt:formatNumber value="${product.price}" /></td>
         <td></td>
+        <td align="center">${product.quantity}</td>
+        <td></td>
         <td class="status-cell">
           <c:choose>
-            <c:when test="${loginUser.role == 'admin' and menuVal == 'manage'}">
-              <c:choose>
-                <c:when test="${empty code}">판매중</c:when>
-                <c:when test="${code == 'BEF'}">배송예정</c:when>
-                <c:when test="${code == 'SHP'}">배송중</c:when>
-                <c:when test="${code == 'DLV'}">배송완료</c:when>
-                <c:otherwise>${code}</c:otherwise>
-              </c:choose>
-
-              <c:if test="${code == 'BEF'}">
-                &nbsp;|&nbsp;
-                <!-- a 제거 → span 버튼화 -->
-                <span class="btn-ship"
-                      data-prodno="${product.prodNo}"
-                      style="color:#0066cc; cursor:pointer; text-decoration:underline;">
-                  배송하기
-                </span>
-              </c:if>
+          
+            <%-- 관리자일 경우 --%>
+            <c:when test="${isAdmin}">
+              <span class="btn-ship" data-prodno="${product.prodNo}"
+                    style="color:#0066cc; cursor:pointer; text-decoration:underline;">
+                배송확인
+              </span>
             </c:when>
-
+            
+            <%-- 일반 사용자일 경우 --%>
             <c:otherwise>
               <c:choose>
-                <c:when test="${empty code}">판매중</c:when>
+                <c:when test="${product.quantity > 0}">판매중</c:when>
                 <c:otherwise>재고소진</c:otherwise>
               </c:choose>
             </c:otherwise>
+            
           </c:choose>
         </td>
       </tr>
-      <tr><td colspan="9" class="dot"></td></tr>
+      <tr><td colspan="11" class="dot"></td></tr>
     </c:forEach>
   </table>
   <!-- [목록 테이블] END -->

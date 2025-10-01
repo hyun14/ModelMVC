@@ -25,16 +25,6 @@
 
 <!-- 등록일 표시용(Date -> yyyy-MM-dd) -->
 <fmt:formatDate value="${product.regDate}" pattern="yyyy-MM-dd" var="regDateDisp" />
-
-<!-- 상태 표시용 -->
-<c:set var="code" value="${product.proTranCode}" />
-<c:choose>
-  <c:when test="${empty code}"><c:set var="statusDisp" value="판매중" /></c:when>
-  <c:when test="${code == 'BEF'}"><c:set var="statusDisp" value="배송예정" /></c:when>
-  <c:when test="${code == 'SHP'}"><c:set var="statusDisp" value="배송중" /></c:when>
-  <c:when test="${code == 'DLV'}"><c:set var="statusDisp" value="배송완료" /></c:when>
-  <c:otherwise><c:set var="statusDisp" value="${code}" /></c:otherwise>
-</c:choose>
 <!-- [상단 변수 세팅] END -->
 
 <!DOCTYPE html>
@@ -80,6 +70,13 @@
         // 필요 시 menu를 명확히 관리모드로 덮어쓰기
         // addHidden("menu", "manage");
         submitWith("${ctx}/product/updateProductView", "get");
+      });
+   	  
+	  // 재입고(관리자 전용) -> restockProduct 화면으로 이동
+      $(".btn-restock").on("click", function(){
+      	clearDynamicHidden();
+      	addHidden("prodNo", "${product.prodNo}");
+      	submitWith("${ctx}/product/restock", "get");
       });
    	  
    // [버튼 확장] 버튼 테이블 구조: [좌캡][가운데버튼(td.ct_btn01 .btn-like)][우캡]
@@ -139,6 +136,9 @@
     <c:if test="${not empty search.searchKeyword}">
       <input type="hidden" name="searchKeyword" value="${search.searchKeyword}"/>
     </c:if>
+    <c:if test="${not empty param.seeAll}">
+      <input type="hidden" name="seeAll" value="${param.seeAll}"/>
+    </c:if>
   </c:if>
 
 <!-- [가드: 잘못된 접근] -->
@@ -176,7 +176,7 @@
     <tr><td height="1" colspan="3" bgcolor="D6D6D6"></td></tr>
     <tr><td class="ct_write">등록일</td><td bgcolor="D6D6D6" width="1"></td><td class="ct_write01">${regDateDisp}</td></tr>
     <tr><td height="1" colspan="3" bgcolor="D6D6D6"></td></tr>
-    <tr><td class="ct_write">현재상태</td><td bgcolor="D6D6D6" width="1"></td><td class="ct_write01">${statusDisp}</td></tr>
+    <tr><td class="ct_write">재고수량</td><td bgcolor="D6D6D6" width="1"></td><td class="ct_write01">${product.quantity} 개</td></tr>
     <tr><td height="1" colspan="3" bgcolor="D6D6D6"></td></tr>
     <tr><td class="ct_write">상품상세정보</td><td bgcolor="D6D6D6" width="1"></td><td class="ct_write01">${product.prodDetail}</td></tr>
     <tr><td height="1" colspan="3" bgcolor="D6D6D6"></td></tr>
@@ -220,21 +220,35 @@
             <td width="14" height="23"><img src="${ctx}/images/ct_btnbg03.gif" width="14" height="23" /></td>
             
             <c:choose>
+              <%-- 관리자 --%>
               <c:when test="${isAdmin}">
+                <%-- 수정 버튼: 판매된 적 없을 때만 활성화 --%>
+                <c:if test="${product.isSell ne 'Y'}">
+                    <td width="10"></td>
+                    <td width="17" height="23"><img src="${ctx}/images/ct_btnbg01.gif" width="17" height="23" /></td>
+                    <td background="${ctx}/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
+                      <span class="btn-like btn-edit">수정</span>
+                    </td>
+                    <td width="14" height="23"><img src="${ctx}/images/ct_btnbg03.gif" width="14" height="23" /></td>
+                </c:if>
                 <td width="10"></td>
                 <td width="17" height="23"><img src="${ctx}/images/ct_btnbg01.gif" width="17" height="23" /></td>
                 <td background="${ctx}/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
-                  <span class="btn-like btn-edit">수정</span>
+                  <span class="btn-like btn-restock">재입고</span>
                 </td>
                 <td width="14" height="23"><img src="${ctx}/images/ct_btnbg03.gif" width="14" height="23" /></td>
               </c:when>
+              
+              <%-- 일반 사용자 --%>
               <c:otherwise>
-                <td width="10"></td>
-                <td width="17" height="23"><img src="${ctx}/images/ct_btnbg01.gif" width="17" height="23" /></td>
-                <td background="${ctx}/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
-                  <span class="btn-like btn-buy">구매</span>
-                </td>
-                <td width="14" height="23"><img src="${ctx}/images/ct_btnbg03.gif" width="14" height="23" /></td>
+                <c:if test="${product.quantity > 0}">
+                    <td width="10"></td>
+                    <td width="17" height="23"><img src="${ctx}/images/ct_btnbg01.gif" width="17" height="23" /></td>
+                    <td background="${ctx}/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
+                      <span class="btn-like btn-buy">구매</span>
+                    </td>
+                    <td width="14" height="23"><img src="${ctx}/images/ct_btnbg03.gif" width="14" height="23" /></td>
+                </c:if>
               </c:otherwise>
             </c:choose>
           </tr>
@@ -242,12 +256,20 @@
       </td>
     </tr>
   </table>
+  <div align="right" style="padding-right:20px; margin-top:5px; height: 20px;">
+      <c:if test="${isAdmin and product.isSell eq 'Y'}">
+          <span style="color:red;">판매된 재품의 정보는 수정할 수 없습니다.</span>
+      </c:if>
+      <c:if test="${!isAdmin and product.quantity <= 0}">
+          <span style="color:red;">재고가 모두 소진되었습니다.</span>
+      </c:if>
+  </div>
 </c:if>
 
 </form>
 
 <!-- 페이지 하단 여백(임시 공백) -->
-<div style="height:48px;"></div>
+<div style="height:64px;"></div>
 
 
 </body>

@@ -6,7 +6,7 @@
   <!-- 단건 조회 (DAO 동일: t JOIN p, tran_no=?) -->
   <select id="findPurchase" parameterType="int" resultMap="ResultMaps.purchaseMap">
     SELECT
-      t.tran_no, t.prod_no, t.buyer_id, t.payment_option,
+      t.tran_no, t.prod_no, t.buyer_id, t.payment_option, t.sell_quantity,
       t.receiver_name, t.receiver_phone, t.demailaddr, t.dlvy_request,
       t.tran_status_code, t.order_data, t.dlvy_date,
       p.prod_name, p.prod_detail, p.manufacture_day, p.price, p.image_file, p.reg_date
@@ -26,7 +26,8 @@
     INSERT INTO transaction (
       tran_no,
       prod_no,
-      buyer_id
+      buyer_id,
+      sell_quantity
       <if test="paymentOption != null and paymentOption != ''">, payment_option</if>
       <if test="receiverName != null and receiverName != ''">, receiver_name</if>
       <if test="receiverPhone != null and receiverPhone != ''">, receiver_phone</if>
@@ -38,7 +39,8 @@
     VALUES (
       #{tranNo:NUMERIC},
       #{purchaseProd.prodNo:NUMERIC},
-      #{buyer.userId:VARCHAR}
+      #{buyer.userId:VARCHAR},
+      #{sellQuantity:NUMERIC}
       <if test="paymentOption != null and paymentOption != ''">, #{paymentOption:CHAR}</if>
       <if test="receiverName != null and receiverName != ''">, #{receiverName:VARCHAR}</if>
       <if test="receiverPhone != null and receiverPhone != ''">, #{receiverPhone:VARCHAR}</if>
@@ -81,7 +83,7 @@
     SELECT * FROM (
       SELECT inner_t.*, ROWNUM rn FROM (
         SELECT
-          t.tran_no, t.prod_no, t.buyer_id, t.payment_option,
+          t.tran_no, t.prod_no, t.buyer_id, t.payment_option, t.sell_quantity,
           t.receiver_name, t.receiver_phone, t.demailaddr, t.dlvy_request,
           t.tran_status_code, t.order_data, t.dlvy_date,
           p.prod_name, p.price
@@ -137,5 +139,20 @@
     WHERE ROWNUM = 1
   </select>
   
+  <select id="getPurchaseListByProd" parameterType="int" resultMap="ResultMaps.purchaseMap">
+    SELECT
+      t.tran_no,
+      t.buyer_id,
+      t.tran_status_code,
+      t.receiver_name,
+      t.receiver_phone,
+      t.order_data,
+      t.dlvy_date,
+      t.sell_quantity
+    FROM transaction t
+    JOIN users u ON u.user_id = t.buyer_id
+    WHERE t.prod_no = #{_parameter}
+    ORDER BY t.tran_no DESC
+  </select>
 
 </mapper>

@@ -60,11 +60,13 @@
       var $detail = $("input[name='prodDetail']");
       var $manu = $("input[name='manuDate']");
       var $price = $("input[name='price']");
+      var $quantity = $("input[name='quantity']");
 
       var name = $.trim($name.val());
       var detail = $.trim($detail.val());
       var manuDate = $.trim($manu.val());
       var price = $.trim($price.val());
+      var quantity = $.trim($quantity.val());
 
       if (!name) { alert("상품명은 반드시 입력하여야 합니다."); $name.focus(); return false; }
       if (!detail) { alert("상품상세정보는 반드시 입력하여야 합니다."); $detail.focus(); return false; }
@@ -82,6 +84,12 @@
         alert("가격은 숫자만 입력하세요.");
         $price.focus(); return false;
       }
+      
+      if (!quantity || !/^\d+$/.test(quantity)) {
+    	  alert("수량은 숫자만 입력하세요.");
+    	  $quantity.focus(); return false;
+      }
+      
       return true;
     }
 
@@ -263,9 +271,26 @@
       </td>
     </tr>
 
-    <tr><td height="1" colspan="3" bgcolor="D6D6D6"></td></tr>
+      <tr>
+        <td height="1" colspan="3" bgcolor="D6D6D6"></td>
+      </tr>
 
-    <tr>
+      <tr>
+        <td width="104" class="ct_write">수량 <img
+          src="${ctx}/images/ct_icon_red.gif" width="3" height="3"
+          align="absmiddle" />
+        </td>
+        <td bgcolor="D6D6D6" width="1"></td>
+        <td class="ct_write01"><input type="text" name="quantity"
+          class="ct_input_g" style="width: 100px; height: 19px"
+          maxlength="7" value="${p.quantity}" />&nbsp;개</td>
+      </tr>
+
+      <tr>
+        <td height="1" colspan="3" bgcolor="D6D6D6"></td>
+      </tr>
+
+      <tr>
   <td width="104" class="ct_write">상품이미지</td>
   <td bgcolor="D6D6D6" width="1"></td>
   <td class="ct_write01">

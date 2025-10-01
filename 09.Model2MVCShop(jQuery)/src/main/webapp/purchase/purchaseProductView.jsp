@@ -101,6 +101,8 @@
       <th class="ct_list_b" width="1"></th>
       <th class="ct_list_b" width="160">전화번호</th>
       <th class="ct_list_b" width="1"></th>
+      <th class="ct_list_b" width="100">구매수량</th>
+      <th class="ct_list_b" width="1"></th>
       <th class="ct_list_b" width="220">배송현황</th>
       <th class="ct_list_b" width="1"></th>
       <th class="ct_list_b" width="120">정보수정</th>
@@ -119,7 +121,9 @@
         <td></td>
         <td align="center">${p.receiverPhone}</td>
         <td></td>
-
+        <td align="center">${p.sellQuantity} 개</td>
+        <td></td>
+        
         <!-- 배송현황 -->
         <td align="left">
           <c:choose>
@@ -142,7 +146,7 @@
           </c:choose>
         </td>
       </tr>
-      <tr><td colspan="11" class="dot"></td></tr>
+      <tr><td colspan="13" class="dot"></td></tr>
     </c:forEach>
   </table>
   <!-- [목록 테이블] END -->

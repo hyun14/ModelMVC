@@ -2,19 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="ProductMapper">
-
-  <!-- <select id="findProduct" parameterType="int" resultMap="ResultMaps.productMap">
-    SELECT
-      prod_no         AS prodNo,
-      prod_name       AS prodName,
-      prod_detail     AS prodDetail,
-      manufacture_day AS manuDate,
-      price           AS price,
-      image_file      AS fileName,
-      reg_date        AS regDate
-    FROM product
-    WHERE prod_no = #{value:NUMERIC}
-  </select> -->
   
   <select id="findProduct" parameterType="int" resultMap="ResultMaps.productResultMap">
     SELECT
@@ -23,8 +10,9 @@
       prod_detail,
       manufacture_day,
       price,
-      image_file,
-      reg_date
+      reg_date,
+      quantity,
+      is_sell
     FROM product
     WHERE prod_no = #{value:NUMERIC}
   </select>
@@ -42,6 +30,8 @@
       <if test="prodDetail != null and prodDetail != ''">, prod_detail</if>
       <if test="manuDate   != null and manuDate   != ''">, manufacture_day</if>
       , price
+      , quantity
+      , is_sell
       , reg_date
     )
     VALUES (
@@ -51,6 +41,8 @@
       <if test="prodDetail != null and prodDetail != ''">, #{prodDetail, jdbcType=VARCHAR}</if>
       <if test="manuDate   != null and manuDate   != ''">, #{manuDate,   jdbcType=VARCHAR}</if>
       , #{price,    jdbcType=NUMERIC}
+      , #{quantity, jdbcType=NUMERIC}
+      , NVL(#{isSell, jdbcType=CHAR}, 'N')
       , SYSDATE
     )
   </insert>
@@ -82,6 +74,8 @@
           p.manufacture_day AS manuDate,
           p.price           AS price,
           p.reg_date        AS regDate,
+          p.quantity        AS quantity,
+          p.is_sell         AS isSell,
           tl.tran_status_code AS proTranCode
         FROM product p
         LEFT JOIN (
@@ -154,35 +148,25 @@
           p.manufacture_day AS manuDate,
           p.price           AS price,
           p.reg_date        AS regDate,
-          tl.tran_status_code AS proTranCode
+          p.quantity        AS quantity,
+          p.is_sell         AS isSell
         FROM product p
-        LEFT JOIN (
-          SELECT prod_no, tran_status_code FROM (
-            SELECT t.prod_no, t.tran_status_code,
-                   ROW_NUMBER() OVER (PARTITION BY t.prod_no ORDER BY t.order_data DESC, t.tran_no DESC) rn
-            FROM transaction t
-          ) WHERE rn = 1
-        ) tl ON tl.prod_no = p.prod_no
         <where>
+          <!-- 기존 검색 바인드/분기 그대로 -->
           <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
           <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
           <if test="kw != ''">
             <choose>
-              <when test='cond.equals("0")'>
-                p.prod_no = TO_NUMBER(#{kw})
-              </when>
-              <when test='cond.equals("1")'>
-                p.prod_name LIKE '%' || #{kw} || '%'
-              </when>
-              <when test='cond.equals("2")'>
-                p.price = TO_NUMBER(#{kw})
-              </when>
-              <otherwise>
-                p.prod_name LIKE '%' || #{kw} || '%'
-              </otherwise>
+              <when test='cond.equals("0")'> p.prod_no = TO_NUMBER(#{kw}) </when>
+              <when test='cond.equals("1")'> p.prod_name LIKE '%' || #{kw} || '%' </when>
+              <when test='cond.equals("2")'> p.price = TO_NUMBER(#{kw}) </when>
+              <otherwise> p.prod_name LIKE '%' || #{kw} || '%' </otherwise>
             </choose>
           </if>
-          AND tl.tran_status_code IS NULL
+          <!-- 신규: seeAll=false(또는 null)이면 재고 있는 상품만 -->
+          <if test="seeAll == null or seeAll == false">
+            AND p.quantity &gt; 0
+          </if>
         </where>
         ORDER BY p.prod_no DESC
       ) inner_t
@@ -194,35 +178,22 @@
 
   <select id="getProductTotalCountByUser" parameterType="search" resultType="int">
     SELECT COUNT(1)
-    FROM product p
-    LEFT JOIN (
-      SELECT prod_no, tran_status_code FROM (
-        SELECT t.prod_no, t.tran_status_code,
-               ROW_NUMBER() OVER (PARTITION BY t.prod_no ORDER BY t.order_data DESC, t.tran_no DESC) rn
-        FROM transaction t
-      ) WHERE rn = 1
-    ) tl ON tl.prod_no = p.prod_no
-    <where>
-      <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
-      <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
-      <if test="kw != ''">
-        <choose>
-          <when test='cond.equals("0")'>
-            p.prod_no = TO_NUMBER(#{kw})
-          </when>
-          <when test='cond.equals("1")'>
-            p.prod_name LIKE '%' || #{kw} || '%'
-          </when>
-          <when test='cond.equals("2")'>
-            p.price = TO_NUMBER(#{kw})
-          </when>
-          <otherwise>
-            p.prod_name LIKE '%' || #{kw} || '%'
-          </otherwise>
-        </choose>
-      </if>
-      AND tl.tran_status_code IS NULL
-    </where>
+      FROM product p
+      <where>
+        <bind name="cond" value="searchCondition == null ? '' : searchCondition.trim()" />
+        <bind name="kw"   value="searchKeyword   == null ? '' : searchKeyword.trim()" />
+        <if test="kw != ''">
+          <choose>
+            <when test='cond.equals("0")'> p.prod_no = TO_NUMBER(#{kw}) </when>
+            <when test='cond.equals("1")'> p.prod_name LIKE '%' || #{kw} || '%' </when>
+            <when test='cond.equals("2")'> p.price = TO_NUMBER(#{kw}) </when>
+            <otherwise> p.prod_name LIKE '%' || #{kw} || '%' </otherwise>
+          </choose>
+        </if>
+        <if test="seeAll == null or seeAll == false">
+          AND p.quantity &gt; 0
+        </if>
+      </where>
   </select>
   
   <!-- image 시퀀스 -->
@@ -237,17 +208,34 @@
   
   <select id="selectProductImages" parameterType="int"
         resultType="com.model2.mvc.service.domain.ProductImage">
-  SELECT image_no AS imageNo,
-         prod_no  AS prodNo,
-         image_path AS imagePath,
-         sort_ord AS sortOrd
-  FROM product_image
-  WHERE prod_no = #{_parameter}
-  ORDER BY NVL(sort_ord, 999999), image_no
-</select>
+    SELECT image_no AS imageNo,
+           prod_no  AS prodNo,
+           image_path AS imagePath,
+           sort_ord AS sortOrd
+    FROM product_image
+    WHERE prod_no = #{_parameter}
+    ORDER BY NVL(sort_ord, 999999), image_no
+  </select>
   
   <delete id="deleteProductImagesByProd" parameterType="int">
     DELETE FROM product_image WHERE prod_no = #{_parameter}
   </delete>
+  
+  <!-- 판매 기록이 생기면 is_sell = 'Y' -->
+  <update id="updateIsSell" parameterType="int">
+    UPDATE product SET is_sell = 'Y' WHERE prod_no = #{_parameter}
+  </update>
+  
+  <!-- 재입고: 현재 수량 += addQty -->
+  <update id="restock" parameterType="map">
+    UPDATE product SET quantity = quantity + #{addQty}
+    WHERE prod_no = #{prodNo}
+  </update>
+  
+  <!-- 차감: 현재 수량 -= qty -->
+  <update id="decreaseQuantity" parameterType="map">
+    UPDATE product SET quantity = quantity - #{qty}
+    WHERE prod_no = #{prodNo}
+  </update>
 
 </mapper>

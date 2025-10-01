@@ -138,6 +138,12 @@
         </td>
       </tr>
       <tr><td colspan="2" bgcolor="#D6D7D6" height="1"></td></tr>
+      
+      <tr class="ct_list_pop">
+        <td class="ct_list_b" align="center">구매수량</td>
+        <td style="padding-left:10px;">${p.sellQuantity} 개 (수정불가)</td>
+      </tr>
+      <tr><td colspan="2" bgcolor="#D6D7D6" height="1"></td></tr>
 
       <tr class="ct_list_pop">
         <td class="ct_list_b" align="center">구매자 이름</td>

@@ -161,10 +161,16 @@ public class ProductController {
 	        product.setPrice(0);
 	    }
 
-	    // 2. 상품 기본 정보 먼저 수정
+	    // 2. 판매여부 확인 → 판매된 상품이면 수정 차단
+	    Product cur = productService.findProduct(product.getProdNo());
+	    if (cur != null && "Y".equalsIgnoreCase(cur.getIsSell())) {
+	    	return "forward:/error/forbidden.jsp"; // 혹은 상세로 forward하며 경고 메시지 바인딩
+	    }
+	    
+	    // 3. 상품 기본 정보 수정
 	    productService.updateProduct(product);
 
-	    // 3. 다중 파일 업로드 및 정보 교체 로직 추가
+	    // 4. 다중 파일 업로드 및 정보 교체 로직 추가
 	    // (addProduct와 동일한 로직)
 	    if (uploadFiles != null && !uploadFiles.isEmpty()) {
 	        String uploadDir = request.getServletContext().getRealPath("/upload");
@@ -196,7 +202,7 @@ public class ProductController {
 	            }
 	        }
 	        
-	        // 4. 이미지 정보 일괄 교체 (기존 이미지 삭제 후 새로 추가)
+	        // 5. 이미지 정보 일괄 교체 (기존 이미지 삭제 후 새로 추가)
 	        productService.replaceProductImages(product.getProdNo(), imageList);
 	    }
 	    
@@ -302,9 +308,16 @@ public class ProductController {
 	// [의미] 사용자 소유 상품 목록. 동작은 listProduct와 동일한 패턴
 	@RequestMapping("/listProductByUser")
 	public String listProductByUser(@ModelAttribute("search") Search search,
-			@RequestParam(value = "menu", required = false) String menu, Model model) throws Exception {
+			@RequestParam(value="seeAll", required=false) Boolean seeAll,
+			@RequestParam(value="menu",   required=false) String menu,
+			HttpSession session, Model model) throws Exception {
 
 		SearchSupport.normalizeAlways(search, this.pageSize);
+		
+		// 관리자면 기본적으로 전부 보임, 일반사용자는 토글값 사용(기본 false)
+		User u = (session != null) ? (User)session.getAttribute("loginUser") : null;
+		boolean isAdmin = (u != null && u.getRole()!=null && !"user".equals(u.getRole()));
+		search.setSeeAll(isAdmin ? Boolean.TRUE : (seeAll != null ? seeAll : Boolean.FALSE));
 
 		Map<String, Object> resultMap = productService.getProductListByUser(search);
 		int totalCount = ((Integer) resultMap.get("totalCount")).intValue();
@@ -338,6 +351,7 @@ public class ProductController {
 		attrs.addAttribute("menu", manage ? "manage" : "search");
 		attrs.addAttribute("currentPage", search.getCurrentPage());
 		attrs.addAttribute("pageSize", search.getPageSize());
+		attrs.addAttribute("seeAll", Boolean.TRUE.equals(search.getSeeAll()));
 		if (search.getSearchCondition() != null)
 			attrs.addAttribute("searchCondition", search.getSearchCondition());
 		if (search.getSearchKeyword() != null)
@@ -345,6 +359,29 @@ public class ProductController {
 
 		return target;
 	}
+	
+	// 재입고 입력 화면 (forward)
+	@GetMapping("/restock")
+	public String restockView(@RequestParam("prodNo") int prodNo, HttpSession session, Model model) throws Exception {
+	    User u = (session != null) ? (User)session.getAttribute("loginUser") : null;
+	    if (u==null || "user".equals(u.getRole())) return "redirect:/error/forbidden.jsp";
+	    model.addAttribute("product", productService.findProduct(prodNo));
+	    return "forward:/product/restockProduct.jsp";
+	}
+
+	// 재입고 처리 (forward로 상세)
+	@PostMapping("/restock")
+	public String restock(@RequestParam("prodNo") int prodNo,
+	                      @RequestParam("quantity") int addQty,
+	                      HttpSession session, Model model) throws Exception {
+	    User u = (session != null) ? (User)session.getAttribute("loginUser") : null;
+	    if (u==null || "user".equals(u.getRole())) return "redirect:/error/forbidden.jsp";
+	    if (addQty <= 0) addQty = 0; // 음수 방지
+	    productService.restock(prodNo, addQty);
+	    model.addAttribute("product", productService.findProduct(prodNo));
+	    return "forward:/product/productDetailView.jsp";
+	}
+
 
 	// =========================
 	// Web-layer helpers (액션 로직 이식)

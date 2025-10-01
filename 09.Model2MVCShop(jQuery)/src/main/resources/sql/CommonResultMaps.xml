@@ -32,10 +32,9 @@
     <result property="prodDetail" column="prodDetail" jdbcType="VARCHAR"/>
     <result property="manuDate"   column="manuDate"   jdbcType="VARCHAR"/>
     <result property="price"      column="price"      jdbcType="NUMERIC"/>
-    <result property="fileName"   column="fileName"   jdbcType="VARCHAR"/>
     <result property="regDate"    column="regDate"    jdbcType="DATE"/>
-    <!-- 최신 거래상태(조인에서만 존재) -->
-    <result property="proTranCode" column="proTranCode" jdbcType="CHAR"/>
+    <result property="quantity"      column="quantity"        jdbcType="NUMERIC"/>
+    <result property="isSell"        column="is_sell"         jdbcType="CHAR"/>
   </resultMap>
 
   <!-- =======================
@@ -45,6 +44,7 @@
        ======================= -->
   <resultMap id="purchaseMap" type="purchase">
     <id     property="tranNo"        column="tran_no"         jdbcType="NUMERIC"/>
+    <result property="sellQuantity"  column="sell_quantity"   jdbcType="NUMERIC"/>
     <result property="paymentOption"  column="payment_option"  jdbcType="CHAR"/>
     <result property="receiverName"   column="receiver_name"   jdbcType="VARCHAR"/>
     <result property="receiverPhone"  column="receiver_phone"  jdbcType="VARCHAR"/>
@@ -71,8 +71,9 @@
     <result property="prodDetail" column="prod_detail"/>
     <result property="manuDate" column="manufacture_day"/>
     <result property="price" column="price"/>
-    <result property="fileName" column="image_file"/>
     <result property="regDate" column="reg_date"/>
+    <result property="quantity" column="quantity"/>
+    <result property="isSell"   column="is_sell"/>
     <!-- ↓ 추가 -->
     <collection property="images"
                 ofType="com.model2.mvc.service.domain.ProductImage"

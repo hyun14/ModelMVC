@@ -91,6 +91,12 @@
       <td class="ct_write01">${product.price}원</td>
     </tr>
     <tr><td colspan="3" height="1" bgcolor="#D6D6D6"></td></tr>
+    <tr>
+      <td class="ct_write">수량</td>
+      <td bgcolor="#D6D6D6"></td>
+      <td class="ct_write01">${product.quantity} 개</td>
+    </tr>
+    <tr><td colspan="3" height="1" bgcolor="#D6D6D6"></td></tr>
 
     <!-- 이미지 미리보기 -->
     <tr>

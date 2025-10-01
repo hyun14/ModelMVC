@@ -16,7 +16,7 @@ import com.model2.mvc.service.purchase.PurchaseDao;
 /**
  * PurchaseDAO 인터페이스의 MyBatis 구현체
  */
-@Repository("purchaseDAOImpl")
+@Repository("purchaseDaoImpl")
 public class PurchaseDaoImpl implements PurchaseDao {
 
 	@Autowired
@@ -44,7 +44,7 @@ public class PurchaseDaoImpl implements PurchaseDao {
 		Map<String, Object> map = new HashMap<>();
 		map.put("list", list);
 		map.put("totalCount", totalCount);
-		
+
 		return map;
 	}
 
@@ -53,11 +53,11 @@ public class PurchaseDaoImpl implements PurchaseDao {
 		// getSaleList와 getSaleTotalCount는 아래 수정된 PurchaseMapper.xml에 추가되어 있습니다.
 		List<Purchase> list = sqlSession.selectList("PurchaseMapper.getSaleList", search);
 		int totalCount = sqlSession.selectOne("PurchaseMapper.getSaleTotalCount", search);
-		
+
 		Map<String, Object> map = new HashMap<>();
 		map.put("list", list);
 		map.put("totalCount", totalCount);
-		
+
 		return map;
 	}
 
@@ -83,7 +83,12 @@ public class PurchaseDaoImpl implements PurchaseDao {
 
 	@Override
 	public int findPurchaseByProdNo(int prodNo) throws Exception {
-	    Integer tranNo = sqlSession.selectOne("PurchaseMapper.findPurchaseByProdNo", prodNo);
-	    return (tranNo != null) ? tranNo : 0; // 없으면 0 반환(필요 시 정책에 맞게 변경)
+		Integer tranNo = sqlSession.selectOne("PurchaseMapper.findPurchaseByProdNo", prodNo);
+		return (tranNo != null) ? tranNo : 0; // 없으면 0 반환(필요 시 정책에 맞게 변경)
+	}
+
+	@Override
+	public List<Map<String, Object>> getPurchaseListByProd(int prodNo) throws Exception {
+		return sqlSession.selectList("PurchaseMapper.getPurchaseListByProd", prodNo);
 	}
 }
