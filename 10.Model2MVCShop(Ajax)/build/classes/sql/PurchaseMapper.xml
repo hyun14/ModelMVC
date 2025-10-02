@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+
+  <!-- 단건 조회 (DAO 동일: t JOIN p, tran_no=?) -->
+  <select id="findPurchase" parameterType="int" resultMap="ResultMaps.purchaseMap">
+    SELECT
+      t.tran_no, t.prod_no, t.buyer_id, t.payment_option, t.sell_quantity,
+      t.receiver_name, t.receiver_phone, t.demailaddr, t.dlvy_request,
+      t.tran_status_code, t.order_data, t.dlvy_date,
+      p.prod_name, p.prod_detail, p.manufacture_day, p.price, p.image_file, p.reg_date
+    FROM transaction t
+    JOIN product p ON t.prod_no = p.prod_no
+    WHERE t.tran_no = #{_parameter:NUMERIC}
+  </select>
+
+  <!-- 다이나믹 INSERT : tran_no 시퀀스, order_data SYSDATE, dlvy_date는 'yyyyMMdd' 문자열이면 TO_DATE -->
+  <insert id="insertPurchase" parameterType="purchase">
+  
+  <!-- 1) 시퀀스 선발급: tranNo를 VO에 주입 -->
+  <selectKey keyProperty="tranNo" resultType="int" order="BEFORE">
+    SELECT seq_transaction_tran_no.NEXTVAL FROM dual
+  </selectKey>
+  
+    INSERT INTO transaction (
+      tran_no,
+      prod_no,
+      buyer_id,
+      sell_quantity
+      <if test="paymentOption != null and paymentOption != ''">, payment_option</if>
+      <if test="receiverName != null and receiverName != ''">, receiver_name</if>
+      <if test="receiverPhone != null and receiverPhone != ''">, receiver_phone</if>
+      <if test="divyAddr != null and divyAddr != ''">, demailaddr</if>
+      <if test="divyRequest != null and divyRequest != ''">, dlvy_request</if>
+      , tran_status_code  , order_data
+      <if test="divyDate != null and divyDate.length() == 8">, dlvy_date</if>
+    )
+    VALUES (
+      #{tranNo:NUMERIC},
+      #{purchaseProd.prodNo:NUMERIC},
+      #{buyer.userId:VARCHAR},
+      #{sellQuantity:NUMERIC}
+      <if test="paymentOption != null and paymentOption != ''">, #{paymentOption:CHAR}</if>
+      <if test="receiverName != null and receiverName != ''">, #{receiverName:VARCHAR}</if>
+      <if test="receiverPhone != null and receiverPhone != ''">, #{receiverPhone:VARCHAR}</if>
+      <if test="divyAddr != null and divyAddr != ''">, #{divyAddr:VARCHAR}</if>
+      <if test="divyRequest != null and divyRequest != ''">, #{divyRequest:VARCHAR}</if>
+      , NVL(#{tranCode:CHAR}, 'BEF')
+      , SYSDATE
+      <if test="divyDate != null and divyDate.length() == 8">, TO_DATE(#{divyDate:VARCHAR}, 'YYYYMMDD')</if>
+    )
+  </insert>
+
+  <!-- 업데이트(DAO 동일 범위) -->
+  <update id="updatePurchase" parameterType="purchase">
+    UPDATE transaction
+       SET payment_option = #{paymentOption:CHAR},
+           receiver_name  = #{receiverName:VARCHAR},
+           receiver_phone = #{receiverPhone:VARCHAR},
+           demailaddr     = #{divyAddr:VARCHAR},
+           dlvy_request   = #{divyRequest:VARCHAR},
+           dlvy_date      = <choose>
+                              <when test="divyDate != null and divyDate.length() == 8">
+                                TO_DATE(#{divyDate:VARCHAR}, 'YYYYMMDD')
+                              </when>
+                              <otherwise>NULL</otherwise>
+                            </choose>
+     WHERE tran_no       = #{tranNo:NUMERIC}
+  </update>
+
+  <!-- 상태코드만 변경 -->
+  <update id="updateTranCode" parameterType="map">
+    UPDATE transaction
+       SET tran_status_code = #{tranCode:CHAR}
+     WHERE tran_no          = #{tranNo:NUMERIC}
+  </update>
+
+  <!-- 구매내역 목록 (buyerId + 페이지) : DAO와 동일하게 t JOIN p, 정렬 고정 -->
+  <!-- 파라미터는 buyerId + Search 두 개. Mapper 인터페이스 사용 시 @Param 권장.
+       (SqlSession 직접 호출이면 Map으로 넘겨도 됨: { buyerId, currentPage, pageSize }) -->
+  <select id="getPurchaseList" resultMap="ResultMaps.purchaseMap">
+    SELECT * FROM (
+      SELECT inner_t.*, ROWNUM rn FROM (
+        SELECT
+          t.tran_no, t.prod_no, t.buyer_id, t.payment_option, t.sell_quantity,
+          t.receiver_name, t.receiver_phone, t.demailaddr, t.dlvy_request,
+          t.tran_status_code, t.order_data, t.dlvy_date,
+          p.prod_name, p.price
+        FROM transaction t
+        JOIN product p ON t.prod_no = p.prod_no
+        <where>
+          t.buyer_id = #{buyerId:VARCHAR}
+          <if test="search.searchStatus != null and search.searchStatus != ''">
+            AND t.tran_status_code = #{search.searchStatus}
+          </if>
+        </where>
+        ORDER BY t.tran_no DESC
+      ) inner_t
+      WHERE ROWNUM &lt;= (#{search.currentPage:NUMERIC} * #{search.pageSize:NUMERIC})
+    )
+    WHERE rn BETWEEN ((#{search.currentPage:NUMERIC} - 1) * #{search.pageSize:NUMERIC} + 1)
+                 AND (#{search.currentPage:NUMERIC} * #{search.pageSize:NUMERIC})
+  </select>
+
+  <!-- 구매내역 총건수 -->
+  <select id="getPurchaseTotalCount" resultType="int">
+    SELECT COUNT(1)
+    FROM transaction t
+    <where>
+      t.buyer_id = #{buyerId:VARCHAR}
+      <if test="search.searchStatus != null and search.searchStatus != ''">
+        AND t.tran_status_code = #{search.searchStatus}
+      </if>
+    </where>
+  </select>
+  
+  <select id="getSaleList" parameterType="search" resultMap="ResultMaps.purchaseMap">
+    SELECT * FROM (
+      SELECT inner_t.*, ROWNUM rn FROM (
+        SELECT
+          t.tran_no, t.prod_no, t.buyer_id, t.payment_option,
+          t.receiver_name, t.receiver_phone, t.demailaddr, t.dlvy_request,
+          t.tran_status_code, t.order_data, t.dlvy_date,
+          p.prod_name, p.price
+        FROM transaction t
+        JOIN product p ON t.prod_no = p.prod_no
+        ORDER BY t.tran_no DESC
+      ) inner_t
+      WHERE ROWNUM &lt;= (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+    )
+    WHERE rn BETWEEN ((#{currentPage:NUMERIC} - 1) * #{pageSize:NUMERIC} + 1)
+                 AND (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+  </select>
+
+  <select id="getSaleTotalCount" parameterType="search" resultType="int">
+    SELECT COUNT(1) FROM transaction
+  </select>
+  
+  <!-- 상품번호로 최신 거래번호 조회 -->
+  <select id="findPurchaseByProdNo" parameterType="int" resultType="int">
+    SELECT tran_no
+    FROM (
+      SELECT t.tran_no
+      FROM transaction t
+      WHERE t.prod_no = #{_parameter:NUMERIC}
+      ORDER BY t.tran_no DESC
+    )
+    WHERE ROWNUM = 1
+  </select>
+  
+  <select id="getPurchaseListByProd" parameterType="int" resultMap="ResultMaps.purchaseMap">
+    SELECT
+      t.tran_no,
+      t.buyer_id,
+      t.tran_status_code,
+      t.receiver_name,
+      t.receiver_phone,
+      t.order_data,
+      t.dlvy_date,
+      t.sell_quantity
+    FROM transaction t
+    JOIN users u ON u.user_id = t.buyer_id
+    WHERE t.prod_no = #{_parameter}
+    ORDER BY t.tran_no DESC
+  </select>
+
+</mapper>
