@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="UserMapper">
+
+  <!-- 단건 조회 -->
+  <select id="getUser" parameterType="string" resultMap="ResultMaps.userMap">
+    SELECT
+      user_id    AS userId,
+      user_name  AS userName,
+      password   AS password,
+      role       AS role,
+      ssn        AS ssn,
+      cell_phone AS phone,
+      addr       AS addr,
+      email      AS email,
+      reg_date   AS regDate
+    FROM users
+    WHERE user_id = #{_parameter:VARCHAR}
+  </select>
+
+  <!-- 다이나믹 INSERT : NOT NULL 컬럼은 항상 포함, 나머지는 값 있을 때만 -->
+  <insert id="addUser" parameterType="user">
+	INSERT INTO users (
+	  user_id,
+	  user_name,
+	  password
+	  <if test="role != null and role != ''">, role</if>
+	  <if test="ssn != null and ssn != ''">, ssn</if>
+	  <if test="phone != null and phone != ''">, cell_phone</if>
+	  <if test="addr != null and addr != ''">, addr</if>
+	  <if test="email != null and email != ''">, email</if>
+	  , reg_date
+	)
+	VALUES (
+	  #{userId:VARCHAR},
+	  #{userName:VARCHAR},
+	  #{password:VARCHAR}
+	  <if test="role != null and role != ''">, #{role:VARCHAR}</if>
+	  <if test="ssn != null and ssn != ''">, #{ssn:VARCHAR}</if>
+	  <if test="phone != null and phone != ''">, #{phone:VARCHAR}</if>
+	  <if test="addr != null and addr != ''">, #{addr:VARCHAR}</if>
+	  <if test="email != null and email != ''">, #{email:VARCHAR}</if>
+	  , SYSDATE
+	)
+  </insert>
+
+  <!-- 업데이트 : DAO와 동일 컬럼 세트 유지 -->
+  <update id="updateUser" parameterType="user">
+    UPDATE users
+       SET user_name  = #{userName:VARCHAR},
+           cell_phone = #{phone:VARCHAR},
+           addr       = #{addr:VARCHAR},
+           email      = #{email:VARCHAR}
+     WHERE user_id    = #{userId:VARCHAR}
+  </update>
+
+  <!-- 목록 총건수 -->
+  <select id="getUserTotalCount" parameterType="search" resultType="int">
+    SELECT COUNT(1)
+    FROM users
+    <where>
+      <if test="searchKeyword != null and searchKeyword != ''">
+        <choose>
+          <!-- 0=id, 1=name, 2=email (현재 로직 기준/필요 시 매핑만 바꾸면 됨) -->
+          <when test="searchCondition == '0'">
+            user_id LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+          </when>
+          <when test="searchCondition == '1'">
+            user_name LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+          </when>
+          <when test="searchCondition == '2'">
+            email LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+          </when>
+          <otherwise>
+            ( user_id   LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+              OR user_name LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+              OR email     LIKE '%' || #{searchKeyword:VARCHAR} || '%' )
+          </otherwise>
+        </choose>
+      </if>
+    </where>
+  </select>
+
+  <!-- 목록 : ROWNUM 페이징 -->
+  <select id="getUserList" parameterType="search" resultMap="ResultMaps.userMap">
+    SELECT * FROM (
+      SELECT inner_t.*, ROWNUM rn FROM (
+        SELECT
+          user_id    AS userId,
+          user_name  AS userName,
+          password   AS password,
+          role       AS role,
+          ssn        AS ssn,
+          cell_phone AS phone,
+          addr       AS addr,
+          email      AS email,
+          reg_date   AS regDate
+        FROM users
+        <where>
+          <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+              <when test="searchCondition == '0'">
+                user_id LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+              </when>
+              <when test="searchCondition == '1'">
+                user_name LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+              </when>
+              <when test="searchCondition == '2'">
+                email LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+              </when>
+              <otherwise>
+                ( user_id   LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+                  OR user_name LIKE '%' || #{searchKeyword:VARCHAR} || '%'
+                  OR email     LIKE '%' || #{searchKeyword:VARCHAR} || '%' )
+              </otherwise>
+            </choose>
+          </if>
+        </where>
+        <!-- TODO(orderBy): 현재는 학습 편의상 직삽입. 추후 화이트리스트로 교체 권장 -->
+        <!-- <if test="orderBy != null and orderBy != ''">ORDER BY ${orderBy}</if> -->
+      	ORDER BY userId
+      ) inner_t
+      WHERE ROWNUM &lt;= (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+    )
+    WHERE rn BETWEEN ((#{currentPage:NUMERIC} - 1) * #{pageSize:NUMERIC} + 1)
+                 AND (#{currentPage:NUMERIC} * #{pageSize:NUMERIC})
+  </select>
+  
+  <!-- 간단 제안: userId/userName만 반환 (Map으로 매핑) -->
+  <select id="suggestUsers" parameterType="map" resultType="map">
+    SELECT * FROM (
+      SELECT
+        u.user_id   AS "userId",
+        u.user_name AS "userName"
+      FROM users u
+      WHERE u.user_id   LIKE #{like}
+         OR u.user_name LIKE #{like}
+      ORDER BY u.user_id
+    )
+    WHERE ROWNUM &lt;= #{limit}
+  </select>
+
+
+</mapper>

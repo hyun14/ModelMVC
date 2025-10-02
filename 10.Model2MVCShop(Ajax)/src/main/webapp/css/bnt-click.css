@@ -1,0 +1,39 @@
+/* 글자(span) 자체를 링크/버튼처럼 보이게 */
+.btn-like, .btn-submit, .btn-cancel {
+  cursor: pointer;
+  color: #0066cc;
+  display: block;           /* 영역화 */
+  padding: 2px 10px;        /* 클릭 범위 확대 */
+  user-select: none;
+  text-decoration: none;
+  transition: color .15s ease, background-color .15s ease;
+}
+
+/* 기본 hover 효과 */
+.btn-like:hover, .btn-submit:hover, .btn-cancel:hover {
+  text-decoration: underline;
+}
+
+/* 가운데 버튼 td 자체도 클릭 가능하게(시각 피드백 포함) */
+td.ct_btn01 { cursor: pointer; }
+
+/* 가운데 td 위에 마우스 올리면 살짝 강조 */
+td.ct_btn01:hover .btn-like,
+td.ct_btn01:hover .btn-submit,
+td.ct_btn01:hover .btn-cancel {
+  text-decoration: underline;
+  background-color: rgba(13, 110, 253, 0.08);
+  border-radius: 4px;
+}
+
+/* 좌/우 캡 td(이미지 캡) 포인터 표시: JS에서 cap-left/right 클래스가 부여됨 */
+td.cap-left, td.cap-right { cursor: pointer; }
+
+/* JS에서 .hover 토글 시에도 같은 강조 */
+td.ct_btn01.hover .btn-like,
+td.ct_btn01.hover .btn-submit,
+td.ct_btn01.hover .btn-cancel {
+  text-decoration: underline;
+  background-color: rgba(13, 110, 253, 0.08);
+  border-radius: 4px;
+}

@@ -1,0 +1,58 @@
+/*
+ * Model2 MVC Shop Custom Stylesheet
+ * 2025-08-14
+ */
+
+/* =================================
+   레이아웃 (Layout)
+   ================================= */
+
+/* 사이드바 스타일 */
+.sidebar {
+    min-width: 220px; /* 사이드바 최소 너비 */
+    max-width: 220px;
+    border-right: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+/* 메인 콘텐츠 영역 패딩 */
+.main-content {
+    padding: 2rem;
+    background-color: #ffffff;
+    overflow-y: auto; /* 내용이 길어지면 스크롤바 생성 */
+}
+
+/* =================================
+   컴포넌트 커스텀 (Component Custom)
+   ================================= */
+
+/* 카드 헤더 스타일 */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-header h3, .card-header h5 {
+    margin-bottom: 0;
+}
+
+/* 필수 입력 필드 표시 */
+.form-label .text-danger {
+    margin-left: 2px;
+}
+
+/* 테이블 셀 세로 중앙 정렬 */
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
+/* =================================
+   유틸리티 (Utilities)
+   ================================= */
+body {
+    /* 전체 폰트를 좀 더 부드러운 것으로 변경 */
+    font-family: 'Helvetica Neue', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+}
+
+;
